@@ -2,9 +2,10 @@ import matplotlib.pyplot as plt
 import math
 
 
-def euler_step(x0, h):
-    x1 = x0 + h*x0
-    return x1
+def euler_step(f, x0, t0, h):
+    x1 = x0 + h * f(t0, x0)
+    t1 = t0 + h
+    return x1, t1
 
 
 def euler_error(x0, deltat_max):
@@ -30,6 +31,8 @@ def euler_error(x0, deltat_max):
 
 deltat_used, error_list = euler_error(1, 1)
 plt.loglog(deltat_used, error_list)
+plt.xlabel('Timestep 'r'$\Delta t$')
+plt.ylabel("Error")
 plt.show()
 
 
