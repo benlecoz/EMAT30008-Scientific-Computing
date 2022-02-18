@@ -8,6 +8,14 @@ def euler_step(f, x0, t0, h):
     return x1, t1
 
 
+def solve_to(f, x1, t1, t2, deltat_max):
+
+    while t1 + deltat_max <= t2:
+        x1, t1 = euler_step(f, x1, t1, deltat_max)
+        
+    return x1
+
+
 def euler_error(x0, deltat_max):
     deltat = [1/6, 1/5, 1/4, 1/3, 1/2, 1]
     i = 0
