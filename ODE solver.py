@@ -10,9 +10,11 @@ def euler_step(f, x0, t0, h):
 
 def solve_to(f, x1, t1, t2, deltat_max):
 
-    while t1 + deltat_max <= t2:
+    while t1 + deltat_max < t2:
         x1, t1 = euler_step(f, x1, t1, deltat_max)
-        
+
+    x1, t1 = euler_step(f, x1, t1, t2 - t1)
+
     return x1
 
 
