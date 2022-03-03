@@ -3,21 +3,21 @@ import math
 import numpy as np
 
 
-def f(x, t):
-    return np.array(x, t)
+def f(x, t, *args):
+    return np.array(x, t, *args)
 
 
-def euler_step(f, x0, t0, h):
-    x1 = x0 + h * f(x0, t0)
+def euler_step(f, x0, t0, h, *args):
+    x1 = x0 + h * f(x0, t0, *args)
     t1 = t0 + h
     return x1, t1
 
 
-def RK4_step(f, x0, t0, h):
-    k1 = f(x0, t0)
-    k2 = f(x0 + h * 0.5 * k1, t0 + 0.5 * h)
-    k3 = f(x0 + h * 0.5 * k2, t0 + 0.5 * h)
-    k4 = f(x0 + h * k3, t0 + h)
+def RK4_step(f, x0, t0, h, *args):
+    k1 = f(x0, t0, *args)
+    k2 = f(x0 + h * 0.5 * k1, t0 + 0.5 * h, *args)
+    k3 = f(x0 + h * 0.5 * k2, t0 + 0.5 * h, *args)
+    k4 = f(x0 + h * k3, t0 + h, *args)
 
     x1 = x0 + 1/6 * h * (k1 + 2 * k2 + 2 * k3 + k4)
     t1 = t0 + h
@@ -25,7 +25,7 @@ def RK4_step(f, x0, t0, h):
     return x1, t1
 
 
-def solve_to(f, x1, t1, t2, step, deltat_max):
+def solve_to(f, x1, t1, t2, step, deltat_max, *args):
 
     min_number_steps = math.ceil((t2 - t1) / deltat_max) + 1
     X = np.zeros(min_number_steps)
@@ -48,6 +48,9 @@ def solve_to(f, x1, t1, t2, step, deltat_max):
         X[-1], T[-1] = RK4_step(f, X[-2], T[-2], t2 - T[-2])
 
     return X, T
+
+
+# def solve_ode()
 
 
 # def solve_ode(f, x0, t, deltat_max):
