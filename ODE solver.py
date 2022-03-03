@@ -25,7 +25,7 @@ def RK4_step(f, x0, t0, h):
     return x1, t1
 
 
-def solve_to(f, x1, t1, t2, deltat_max):
+def solve_to(f, x1, t1, t2, step, deltat_max):
 
     min_number_steps = math.ceil((t2 - t1) / deltat_max) + 1
     X = np.zeros(min_number_steps)
@@ -33,11 +33,19 @@ def solve_to(f, x1, t1, t2, deltat_max):
     X[0] = x1
     T[0] = t1
 
-    for i in range(min_number_steps-1):
-        next_step = i+1
-        X[next_step], T[next_step] = euler_step(f, X[i], T[i], deltat_max)
+    if step == 'euler':
 
-    X[-1], T[-1] = euler_step(f, X[-2], T[-2], t2 - T[-2])
+        for i in range(min_number_steps-1):
+            X[i+1], T[i+1] = euler_step(f, X[i], T[i], deltat_max)
+
+        X[-1], T[-1] = euler_step(f, X[-2], T[-2], t2 - T[-2])
+
+    if step == 'RK4':
+
+        for i in range(min_number_steps - 1):
+            X[i + 1], T[i + 1] = RK4_step(f, X[i], T[i], deltat_max)
+
+        X[-1], T[-1] = RK4_step(f, X[-2], T[-2], t2 - T[-2])
 
     return X, T
 
@@ -45,7 +53,7 @@ def solve_to(f, x1, t1, t2, deltat_max):
 # def solve_ode(f, x0, t, deltat_max):
 
 
-yes, nope_sire = solve_to(f, 1, 0, 1, 0.1)
+yes, nope_sire = solve_to(f, 1, 0, 1, 'RK4', 0.1)
 print(yes)
 
 
