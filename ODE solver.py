@@ -1,12 +1,27 @@
 import matplotlib.pyplot as plt
 import math
-
 import numpy as np
+
+
+def f(x, t):
+    return np.array(x, t)
 
 
 def euler_step(f, x0, t0, h):
     x1 = x0 + h * f(x0, t0)
     t1 = t0 + h
+    return x1, t1
+
+
+def RK4_step(f, x0, t0, h):
+    k1 = f(x0, t0)
+    k2 = f(x0 + h * 0.5 * k1, t0 + 0.5 * h)
+    k3 = f(x0 + h * 0.5 * k2, t0 + 0.5 * h)
+    k4 = f(x0 + h * k3, t0 + h)
+
+    x1 = x0 + 1/6 * h * (k1 + 2 * k2 + 2 * k3 + k4)
+    t1 = t0 + h
+
     return x1, t1
 
 
@@ -27,14 +42,11 @@ def solve_to(f, x1, t1, t2, deltat_max):
     return X, T
 
 
-def f(x, t):
-    return np.array(x, t)
-
-
 # def solve_ode(f, x0, t, deltat_max):
 
 
-yes, yessir = solve_to(f, 1, 0, 1, 0.01)
+yes, nope_sire = solve_to(f, 1, 0, 1, 0.1)
+print(yes)
 
 
 
