@@ -4,106 +4,71 @@ import numpy as np
 
 
 def f(x, t, *args):
-    return np.array(x, t, *args)
+    return np.array([x, t], *args)
 
 
 def euler_step(f, x0, t0, h, *args):
-    x1 = x0 + h * f(x0, t0, *args)
+
+    func = f(x0, t0, *args)
+    x1 = x0 + h * func[0]
     t1 = t0 + h
+
     return x1, t1
 
 
 def RK4_step(f, x0, t0, h, *args):
-    k1 = f(x0, t0, *args)
-    k2 = f(x0 + h * 0.5 * k1, t0 + 0.5 * h, *args)
-    k3 = f(x0 + h * 0.5 * k2, t0 + 0.5 * h, *args)
-    k4 = f(x0 + h * k3, t0 + h, *args)
 
-    x1 = x0 + 1/6 * h * (k1 + 2 * k2 + 2 * k3 + k4)
+    k1 = f(x0, t0, *args)
+    k2 = f(x0 + h * 0.5 * k1[0], t0 + 0.5 * h, *args)
+    k3 = f(x0 + h * 0.5 * k2[0], t0 + 0.5 * h, *args)
+    k4 = f(x0 + h * k3[0], t0 + h, *args)
+
+    k = 1/6 * h * (k1 + 2 * k2 + 2 * k3 + k4)
+
+    x1 = x0 + k[0]
     t1 = t0 + h
 
     return x1, t1
 
 
-def solve_to(f, x1, t1, t2, step, deltat_max, *args):
+def solve_to(f, x1, t1, t2, step_type, deltat_max, *args):
 
-    min_number_steps = math.ceil((t2 - t1) / deltat_max) + 1
-    X = np.zeros(min_number_steps)
-    T = np.zeros(min_number_steps)
-    X[0] = x1
-    T[0] = t1
+    min_number_steps = math.floor((t2 - t1) / deltat_max)
 
-    if step == 'euler':
+    if step_type == 'euler':
 
-        for i in range(min_number_steps-1):
-            X[i+1], T[i+1] = euler_step(f, X[i], T[i], deltat_max)
+        for i in range(min_number_steps):
+            x1, t1 = euler_step(f, x1, t1, deltat_max, *args)
 
-        X[-1], T[-1] = euler_step(f, X[-2], T[-2], t2 - T[-2])
+        if t1 != t2:
+            x1, t1 = euler_step(f, x1, t1, t2 - t1)
 
-    if step == 'RK4':
+    if step_type == 'RK4':
 
-        for i in range(min_number_steps - 1):
-            X[i + 1], T[i + 1] = RK4_step(f, X[i], T[i], deltat_max)
+        for i in range(min_number_steps):
 
-        X[-1], T[-1] = RK4_step(f, X[-2], T[-2], t2 - T[-2])
+            x1, t1 = RK4_step(f, x1, t1, deltat_max, *args)
 
-    return X, T
+        if t1 != t2:
+            x1, t1 = RK4_step(f, x1, t1, t2 - t1)
 
-
-# def solve_ode()
+    return x1
 
 
-# def solve_ode(f, x0, t, deltat_max):
+def solve_ode(f, x0, t, step_type, deltat_max, *args):
+
+    min_number_steps = math.ceil((t[-1] - t[0]) / deltat_max)
+
+    X = np.zeros(min_number_steps + 1)
+    X[0] = x0
+
+    for i in range(min_number_steps):
+
+        X[i + 1] = solve_to(f, X[i], t[i], t[i+1], step_type, deltat_max, *args)
+
+    return X, t
 
 
-yes, nope_sire = solve_to(f, 1, 0, 1, 'RK4', 0.1)
-print(yes)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#
-# def euler_error(x0, deltat_max):
-#     deltat = [1/6, 1/5, 1/4, 1/3, 1/2, 1]
-#     i = 0
-#     h = deltat[i]
-#     error_list = []
-#     deltat_used = []
-#     while h < deltat_max:
-#         sum_h = h
-#         x1 = x0
-#         while sum_h < 1:
-#             x2 = euler_step(x1, h)
-#             x1 = x2
-#             sum_h += h
-#         error = math.exp(1) - x2
-#         error_list.append(error)
-#         deltat_used.append(h)
-#         i += 1
-#         h = deltat[i]
-#     return deltat_used, error_list
-#
-#
-# deltat_used, error_list = euler_error(1, 1)
-# plt.loglog(deltat_used, error_list)
-# plt.xlabel('Timestep 'r'$\Delta t$')
-# plt.ylabel("Error")
-# plt.show()
-
+X_values, t_values = solve_ode(f, 1, [0, 0.35, 0.7, 1], 'euler', 0.35)
+print(X_values, t_values)
 
