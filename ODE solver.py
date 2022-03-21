@@ -1,10 +1,17 @@
 import matplotlib.pyplot as plt
 import math
 import numpy as np
+from scipy.integrate import odeint
 
 
 def f(x, t, *args):
     return np.array([x, t], *args)
+
+
+def true_solution(x, t):
+    x = math.exp(t)
+
+    return x
 
 
 def euler_step(f, x0, t0, h, *args):
@@ -57,18 +64,60 @@ def solve_to(f, x1, t1, t2, step_type, deltat_max, *args):
 
 def solve_ode(f, x0, t, step_type, deltat_max, *args):
 
-    min_number_steps = math.ceil((t[-1] - t[0]) / deltat_max)
+    min_number_steps = math.ceil((t[1] - t[0]) / deltat_max)
 
     X = np.zeros(min_number_steps + 1)
+    T = np.zeros(min_number_steps + 1)
     X[0] = x0
+    T[0] = t[0]
 
     for i in range(min_number_steps):
 
-        X[i + 1] = solve_to(f, X[i], t[i], t[i+1], step_type, deltat_max, *args)
+        if T[i] + deltat_max < t[1]:
+            T[i+1] = T[i] + deltat_max
 
-    return X, t
+        else:
+            T[i+1] = t[1]
+        X[i + 1] = solve_to(f, X[i], T[i], T[i+1], step_type, deltat_max, *args)
+
+    return X, T
 
 
-X_values, t_values = solve_ode(f, 1, [0, 0.35, 0.7, 1], 'euler', 0.35)
-print(X_values, t_values)
+def error_plot(f, x0, t):
+
+    timesteps = np.logspace(-4, 0, 100)
+
+    euler_error = np.zeros(len(timesteps))
+    RK4_error = np.zeros(len(timesteps))
+
+    for i in range(len(timesteps)):
+
+        true_sol = true_solution(x0, t[1])
+        euler_sol, euler_time = solve_ode(f, x0, t, 'euler', timesteps[i])
+        RK4_sol, RK4_time = solve_ode(f, x0, t, 'RK4', timesteps[i])
+
+        euler_error[i] = abs(euler_sol[-1] - true_sol)
+        RK4_error[i] = abs(RK4_sol[-1] - true_sol)
+
+    ax = plt.gca()
+    ax.scatter(timesteps, euler_error)
+    ax.scatter(timesteps, RK4_error)
+    ax.set_yscale('log')
+    ax.set_xscale('log')
+    ax.set_xlabel('Timestep size')
+    ax.set_ylabel('Absolute Error')
+    ax.legend(('Euler error', 'RK4 error'))
+    plt.show()
+
+    return timesteps, euler_error, RK4_error
+
+
+# X_values, t_values = solve_ode(f, 1, [0, 2], 'euler', 0.1)
+# print(X_values, t_values)
+
+one, two, three = error_plot(f, 1, [0, 1])
+
+
+
+
 
