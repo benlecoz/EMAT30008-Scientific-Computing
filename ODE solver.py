@@ -23,7 +23,6 @@ def true_solution(t):
 
 
 def euler_step(f, x0, t0, h, *args):
-
     x1 = x0 + h * f(x0, t0, *args)
     t1 = t0 + h
 
@@ -44,10 +43,10 @@ def RK4_step(f, x0, t0, h, *args):
     return x1, t1
 
 
-def solve_to(f, x1, t1, t2, step_type, deltat_max, *args):
+def solve_to(f, x1, t1, t2, method, deltat_max, *args):
     min_number_steps = math.floor((t2 - t1) / deltat_max)
 
-    if step_type == 'euler':
+    if method == 'euler':
 
         for i in range(min_number_steps):
             x1, t1 = euler_step(f, x1, t1, deltat_max, *args)
@@ -55,7 +54,7 @@ def solve_to(f, x1, t1, t2, step_type, deltat_max, *args):
         if t1 != t2:
             x1, t1 = euler_step(f, x1, t1, t2 - t1, *args)
 
-    if step_type == 'RK4':
+    if method == 'RK4':
 
         for i in range(min_number_steps):
             x1, t1 = RK4_step(f, x1, t1, deltat_max, *args)
@@ -66,39 +65,38 @@ def solve_to(f, x1, t1, t2, step_type, deltat_max, *args):
     return x1
 
 
-def solve_ode(f, x0, t, step_type, deltat_max, *args):
-    min_number_steps = math.ceil((t[1] - t[0]) / deltat_max)
+def solve_ode(f, x0, t0, t1, method = 'RK4', deltat_max = 0.01, *args):
+    min_number_steps = math.ceil((t1 - t0) / deltat_max)
 
     X = np.zeros((min_number_steps + 1, 2))
     T = np.zeros(min_number_steps + 1)
     X[0] = x0
-    T[0] = t[0]
+    T[0] = t0
 
     for i in range(min_number_steps):
 
-        if T[i] + deltat_max < t[1]:
+        if T[i] + deltat_max < t1:
             T[i + 1] = T[i] + deltat_max
 
         else:
-            T[i + 1] = t[1]
-        X[i + 1] = solve_to(f, X[i], T[i], T[i + 1], step_type, deltat_max, *args)
+            T[i + 1] = t1
+        X[i + 1] = solve_to(f, X[i], T[i], T[i + 1], method, deltat_max, *args)
 
     return X, T
 
 
-def error_plot(f, x0, t):
+def error_plot(f, x0, t0, t1):
     timesteps = np.logspace(-4, 0, 100)
 
     euler_error = np.zeros(len(timesteps))
     RK4_error = np.zeros(len(timesteps))
 
     for i in range(len(timesteps)):
-        true_sol = true_solution(t[1])
-        euler_sol, euler_time = solve_ode(f, x0, t, 'euler', timesteps[i])
-        RK4_sol, RK4_time = solve_ode(f, x0, t, 'RK4', timesteps[i])
-
-        euler_error[i] = abs(euler_sol[-1] - true_sol)
-        RK4_error[i] = abs(RK4_sol[-1] - true_sol)
+        true_sol = true_solution(t1)
+        euler_sol, euler_time = solve_ode(f, x0, t0, t1, 'euler', timesteps[i])
+        RK4_sol, RK4_time = solve_ode(f, x0, t0, t1, 'RK4', timesteps[i])
+        euler_error[i] = abs(euler_sol[-1, -1] - true_sol)
+        RK4_error[i] = abs(RK4_sol[-1, -1] - true_sol)
 
     ax = plt.gca()
     ax.scatter(timesteps, euler_error)
@@ -113,30 +111,33 @@ def error_plot(f, x0, t):
     return timesteps, euler_error, RK4_error
 
 
-def SO_plot(x0, t, step_type, delta_max):
+def SO_plot(x0, t0, t1, method, delta_max, *args):
+    X, T = solve_ode(SO_f2, x0, t0, t1, method, delta_max, *args)
 
-    X, T = solve_ode(SO_f, x0, t, step_type, delta_max)
-
-    plt.plot(X[:, 0], T)
-    plt.plot(X[:, 1], T)
+    plt.plot(T, X[:, 0])
+    plt.plot(T, X[:, 1])
     plt.show()
 
+    return X, T
 
-def time_difference(f, x0, t, RK4_timestep, euler_timestep):
 
+def time_difference(f, x0, t0, t1, RK4_timestep, euler_timestep):
     euler_start_time = time.time()
-    euler_sol, euler_time = solve_ode(f, x0, t, 'euler', euler_timestep)
-    euler_error = abs(euler_sol[-1] - true_solution(t[1]))
-    print('The Euler error value is', euler_error, 'achieved in', time.time() - euler_start_time, 'seconds, for timestep',
+    euler_sol, euler_time = solve_ode(f, x0, t0, t1, 'euler', euler_timestep)
+    euler_error = abs(euler_sol[-1] - true_solution(t1))
+    print('The Euler error value is', euler_error, 'achieved in', time.time() - euler_start_time,
+          'seconds, for timestep',
           euler_timestep)
 
     RK4_start_time = time.time()
-    RK4_sol, RK4_time = solve_ode(f, x0, t, 'RK4', RK4_timestep)
-    RK4_error = abs(RK4_sol[-1] - true_solution(t[1]))
-    print('The RK4 error value is', RK4_error,'achieved in', time.time() - RK4_start_time, 'seconds, for timestep', RK4_timestep)
+    RK4_sol, RK4_time = solve_ode(f, x0, t0, t1, 'RK4', RK4_timestep)
+    RK4_error = abs(RK4_sol[-1] - true_solution(t1))
+    print('The RK4 error value is', RK4_error, 'achieved in', time.time() - RK4_start_time, 'seconds, for timestep',
+          RK4_timestep)
 
 
 # time_difference(f, 1, [0, 2], 0.3, 9.7 * 10 ** (-5), 1)
 # one, two, three = error_plot(f, 1, [0, 2], 1)
 
-SO_plot([0, 2], [0, 50], 'euler', 0.1)
+X, T = SO_plot([0.1, 0.2], 0, 100, 'euler', 0.1)
+error_plot(f, 1, 0, 1)
