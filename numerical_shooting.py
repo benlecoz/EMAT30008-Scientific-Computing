@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
-from ODE_solver import solve_ode
+from ODE_solver import solve_ode, SO_plot
 from scipy.optimize import fsolve
 
 
@@ -47,6 +47,13 @@ def shooting(x0, t):
     return real_sol
 
 
+def shooting_cycle(f, solution):
+
+    x0, t = solution[:-1], solution[-1]
+
+    SO_plot(f, x0, 0, t)
+
+
 def shooting_orbit(f, solution):
 
     x0, t = solution[:-1], solution[-1]
@@ -63,6 +70,7 @@ t = np.array([8])
 solution = shooting(x0, t)
 print(solution)
 
+shooting_cycle(Hopf_bif, solution)
 shooting_orbit(Hopf_bif, solution)
 
 
