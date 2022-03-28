@@ -32,16 +32,22 @@ def shooting(x0, t):
     return real_sol
 
 
+def shooting_orbit(solution):
+
+    x0, t = solution[:-1], solution[-1]
+
+    sol, sol_time = solve_ode(SO_f2, x0, 0, t)
+    plt.plot(sol[:, 0], sol[:, 1])
+    plt.show()
+
+
 x0 = np.array([0.25, 0.3])
 t = np.array([23])
-interim = conds(np.r_[x0, t])
 
 solution = shooting(x0, t)
 print(solution)
 
-x0, t = solution[:-1], solution[-1]
+shooting_orbit(solution)
 
-sol, sol_time = solve_ode(SO_f2, x0, 0, t)
-plt.plot(sol[:, 0], sol[:, 1])
-plt.show()
+
 
