@@ -2,7 +2,6 @@ import matplotlib.pyplot as plt
 import math
 import numpy as np
 import time
-from scipy.optimize import fsolve
 
 
 def f(x, t, *args):
@@ -66,7 +65,7 @@ def solve_to(f, x1, t1, t2, method, deltat_max, *args):
     return x1
 
 
-def solve_ode(f, x0, t0, t1, method = 'RK4', deltat_max = 0.01, *args):
+def solve_ode(f, x0, t0, t1, method, deltat_max, *args):
     min_number_steps = math.ceil((t1 - t0) / deltat_max)
     X = np.zeros((min_number_steps + 1, 2))
     T = np.zeros(min_number_steps + 1)
@@ -112,13 +111,11 @@ def error_plot(f, x0, t0, t1):
 
 
 def SO_plot(f, x0, t0, t1, *args):
-    X, T = solve_ode(f, x0, t0, t1, *args)
+    X, T = solve_ode(f, x0, t0, t1, 'RK4', 0.01, *args)
 
     plt.plot(T, X[:, 0])
     plt.plot(T, X[:, 1])
     plt.show()
-
-    return X, T
 
 
 def time_difference(f, x0, t0, t1, RK4_timestep, euler_timestep):
@@ -136,12 +133,29 @@ def time_difference(f, x0, t0, t1, RK4_timestep, euler_timestep):
           RK4_timestep)
 
 
+def SO_f2(X, t, args):
+
+    x, y = X
+    a = args[0]
+    b = args[1]
+    d = args[2]
+
+    dxdt = x * (1 - x) - (a * x * y) / (d + x)
+    dydt = b * y * (1 - y / x)
+
+    dXdt = np.array([dxdt, dydt])
+
+    return dXdt
+
+
 if __name__ == "__main__":
 
     # time_difference(f, 1, [0, 2], 0.3, 9.7 * 10 ** (-5), 1)
     # one, two, three = error_plot(f, 1, [0, 2], 1)
 
-    X, T = SO_plot(SO_f, [0.1, 0.2], 0, 100)
+    args = [1, 0.16, 0.1]
+
+    SO_plot(SO_f2, [0.25, 0.3], 0, 23, args)
     error_plot(f, 1, 0, 1)
 
 

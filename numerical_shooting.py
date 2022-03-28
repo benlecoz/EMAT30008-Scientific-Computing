@@ -4,74 +4,89 @@ from ODE_solver import solve_ode, SO_plot
 from scipy.optimize import fsolve
 
 
-def SO_f2(X, t, *args):
+def SO_f2(X, t, args):
 
     x, y = X
-    dxdt = x * (1 - x) - (1 * x * y) / (0.1 + x)
-    dydt = 0.16 * y * (1 - y / x)
-    dXdt = np.array([dxdt, dydt, *args])
+    a = args[0]
+    b = args[1]
+    d = args[2]
+
+    dxdt = x * (1 - x) - (a * x * y) / (d + x)
+    dydt = b * y * (1 - y / x)
+
+    dXdt = np.array([dxdt, dydt])
 
     return dXdt
 
 
-def Hopf_bif(U, t, *args):
+def Hopf_bif(U, t, args):
 
-    beta = 1
-    sigma = -1
+    beta = args[0]
+    sigma = args[1]
 
     u1, u2 = U
     du1dt = beta * u1 - u2 + sigma * u1 * (u1 ** 2 + u2 ** 2)
     du2dt = u1 + beta * u2 + sigma * u2 * (u1 ** 2 + u2 ** 2)
-    dudt = np.array([du1dt, du2dt, *args])
+    dudt = np.array([du1dt, du2dt])
 
     return dudt
 
 
-def conds(u0):
-    x0, t = u0[:-1], u0[-1:]
-    sol, sol_time = solve_ode(Hopf_bif, x0, 0, t)
-    phase_con = Hopf_bif(x0, 0, t)[0]
-    period_con1 = x0[0] - sol[-1, 0]
-    period_con2 = x0[1] - sol[-1, 1]
-    period_con = np.array([period_con1, period_con2])
+def shooting(f, u0, args):
 
-    print('x0 is:', x0,'sol is:',  sol,'t is:', t)
+    def conds(u0):
 
-    return np.r_[phase_con, period_con]
+        x0, t = u0[:-1], u0[-1:]
 
+        sol, sol_time = solve_ode(f, x0, 0, t, 'RK4', 0.01, args)
 
-def shooting(x0, t):
+        phase_con = f(x0, t, args)[0]
+        period_con1 = x0[0] - sol[-1, 0]
+        period_con2 = x0[1] - sol[-1, 1]
+        period_con = np.array([period_con1, period_con2])
 
-    real_sol = fsolve(conds, np.r_[x0, t])
+        return np.r_[phase_con, period_con]
+
+    real_sol = fsolve(conds, u0)
 
     return real_sol
 
 
-def shooting_cycle(f, solution):
+def shooting_cycle(f, solution, args):
 
     x0, t = solution[:-1], solution[-1]
 
-    SO_plot(f, x0, 0, t)
+    SO_plot(f, x0, 0, t, args)
 
 
-def shooting_orbit(f, solution):
+def shooting_orbit(f, solution, args):
 
     x0, t = solution[:-1], solution[-1]
 
-    sol, sol_time = solve_ode(f, x0, 0, t)
+    sol, sol_time = solve_ode(f, x0, 0, t, 'RK4', 0.01, args)
 
     plt.plot(sol[:, 0], sol[:, 1])
     plt.show()
 
 
-x0 = np.array([1, 1])
-t = np.array([8])
+args = [1, 0.16, 0.1]
+shooting_solution = shooting(SO_f2, [0.2, 0.2, 21], args)
 
-solution = shooting(x0, t)
-print(solution)
+print(shooting_solution)
 
-shooting_cycle(Hopf_bif, solution)
-shooting_orbit(Hopf_bif, solution)
+shooting_cycle(SO_f2, shooting_solution, args)
+shooting_orbit(SO_f2, shooting_solution, args)
+
+
+# args = [1, -1]
+# shooting_solution = shooting(Hopf_bif, [1, 1, 8], args)
+#
+# print(shooting_solution)
+#
+# shooting_cycle(Hopf_bif, shooting_solution, args)
+# shooting_orbit(Hopf_bif, shooting_solution, args)
+
+
 
 
 
