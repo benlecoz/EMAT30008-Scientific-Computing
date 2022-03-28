@@ -111,8 +111,8 @@ def error_plot(f, x0, t0, t1):
     return timesteps, euler_error, RK4_error
 
 
-def SO_plot(x0, t0, t1, method, delta_max, *args):
-    X, T = solve_ode(SO_f, x0, t0, t1, method, delta_max, *args)
+def SO_plot(f, x0, t0, t1, *args):
+    X, T = solve_ode(f, x0, t0, t1, *args)
 
     plt.plot(T, X[:, 0])
     plt.plot(T, X[:, 1])
@@ -136,10 +136,12 @@ def time_difference(f, x0, t0, t1, RK4_timestep, euler_timestep):
           RK4_timestep)
 
 
-# time_difference(f, 1, [0, 2], 0.3, 9.7 * 10 ** (-5), 1)
-# one, two, three = error_plot(f, 1, [0, 2], 1)
-
 if __name__ == "__main__":
 
-    X, T = SO_plot([0.1, 0.2], 0, 100, 'euler', 0.1)
+    # time_difference(f, 1, [0, 2], 0.3, 9.7 * 10 ** (-5), 1)
+    # one, two, three = error_plot(f, 1, [0, 2], 1)
+
+    X, T = SO_plot(SO_f, [0.1, 0.2], 0, 100)
     error_plot(f, 1, 0, 1)
+
+
