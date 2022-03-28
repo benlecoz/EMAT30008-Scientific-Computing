@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import math
 import numpy as np
 import time
+from scipy.optimize import fsolve
 
 
 def f(x, t, *args):
@@ -67,7 +68,6 @@ def solve_to(f, x1, t1, t2, method, deltat_max, *args):
 
 def solve_ode(f, x0, t0, t1, method = 'RK4', deltat_max = 0.01, *args):
     min_number_steps = math.ceil((t1 - t0) / deltat_max)
-
     X = np.zeros((min_number_steps + 1, 2))
     T = np.zeros(min_number_steps + 1)
     X[0] = x0
@@ -112,7 +112,7 @@ def error_plot(f, x0, t0, t1):
 
 
 def SO_plot(x0, t0, t1, method, delta_max, *args):
-    X, T = solve_ode(SO_f2, x0, t0, t1, method, delta_max, *args)
+    X, T = solve_ode(SO_f, x0, t0, t1, method, delta_max, *args)
 
     plt.plot(T, X[:, 0])
     plt.plot(T, X[:, 1])
@@ -139,5 +139,7 @@ def time_difference(f, x0, t0, t1, RK4_timestep, euler_timestep):
 # time_difference(f, 1, [0, 2], 0.3, 9.7 * 10 ** (-5), 1)
 # one, two, three = error_plot(f, 1, [0, 2], 1)
 
-X, T = SO_plot([0.1, 0.2], 0, 100, 'euler', 0.1)
-error_plot(f, 1, 0, 1)
+if __name__ == "__main__":
+
+    X, T = SO_plot([0.1, 0.2], 0, 100, 'euler', 0.1)
+    error_plot(f, 1, 0, 1)
