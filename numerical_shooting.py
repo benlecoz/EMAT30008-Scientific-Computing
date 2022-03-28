@@ -1,14 +1,16 @@
 import matplotlib.pyplot as plt
 import numpy as np
-from ODE solver import solve_ode
+from ODE_solver import solve_ode
 from scipy.optimize import fsolve
 
 
 def SO_f2(X, t, *args):
+
     x, y = X
     dxdt = x * (1 - x) - (1 * x * y) / (0.1 + x)
-    dydt = 0.14 * y * (1 - y / x)
+    dydt = 0.16 * y * (1 - y / x)
     dXdt = np.array([dxdt, dydt, *args])
+
     return dXdt
 
 
@@ -31,13 +33,9 @@ def shooting(x0, t):
 
 
 x0 = np.array([0.25, 0.3])
-t = np.array([20])
+t = np.array([23])
 interim = conds(np.r_[x0, t])
 
 solution = shooting(x0, t)
+print(solution)
 
-x0, t = solution[:-1], solution[-1]
-
-sol, sol_time = solve_ode(SO_f2, x0, 0, t)
-plt.plot(sol[:, 0], sol[:, 1])
-plt.show()
