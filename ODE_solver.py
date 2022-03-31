@@ -84,7 +84,7 @@ def solve_ode(f, x0, t0, t1, method, deltat_max, *args):
     return X, T
 
 
-def error_plot(f, x0, t0, t1):
+def error_plot(f, x0, t0, t1, *args):
     timesteps = np.logspace(-4, 0, 100)
 
     euler_error = np.zeros(len(timesteps))
@@ -92,8 +92,8 @@ def error_plot(f, x0, t0, t1):
 
     for i in range(len(timesteps)):
         true_sol = true_solution(t1)
-        euler_sol, euler_time = solve_ode(f, x0, t0, t1, 'euler', timesteps[i])
-        RK4_sol, RK4_time = solve_ode(f, x0, t0, t1, 'RK4', timesteps[i])
+        euler_sol, euler_time = solve_ode(f, x0, t0, t1, 'euler', timesteps[i], *args)
+        RK4_sol, RK4_time = solve_ode(f, x0, t0, t1, 'RK4', timesteps[i], *args)
         euler_error[i] = abs(euler_sol[-1, -1] - true_sol)
         RK4_error[i] = abs(RK4_sol[-1, -1] - true_sol)
 
@@ -111,11 +111,16 @@ def error_plot(f, x0, t0, t1):
 
 
 def SO_plot(f, x0, t0, t1, *args):
+
     X, T = solve_ode(f, x0, t0, t1, 'RK4', 0.01, *args)
 
-    plt.plot(T, X[:, 0])
-    plt.plot(T, X[:, 1])
+    plt.plot(T, X[:, 0], label = 'S1')
+    plt.plot(T, X[:, 1], label = 'S2')
+    plt.legend()
+
     plt.show()
+
+    return X, T
 
 
 def time_difference(f, x0, t0, t1, RK4_timestep, euler_timestep):
@@ -133,29 +138,12 @@ def time_difference(f, x0, t0, t1, RK4_timestep, euler_timestep):
           RK4_timestep)
 
 
-def SO_f2(X, t, args):
-
-    x, y = X
-    a = args[0]
-    b = args[1]
-    d = args[2]
-
-    dxdt = x * (1 - x) - (a * x * y) / (d + x)
-    dydt = b * y * (1 - y / x)
-
-    dXdt = np.array([dxdt, dydt])
-
-    return dXdt
-
-
 if __name__ == "__main__":
 
     # time_difference(f, 1, [0, 2], 0.3, 9.7 * 10 ** (-5), 1)
     # one, two, three = error_plot(f, 1, [0, 2], 1)
 
-    args = [1, 0.16, 0.1]
-
-    SO_plot(SO_f2, [0.25, 0.3], 0, 23, args)
+    SO_plot(SO_f, [0.25, 0.3], 0, 23)
     error_plot(f, 1, 0, 1)
 
 
