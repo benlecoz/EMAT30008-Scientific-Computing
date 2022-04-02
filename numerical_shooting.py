@@ -49,15 +49,22 @@ def Hopf_true_sol(t, args):
     return u1, u2
 
 
-def shooting(f, u0, *args):
+def phase_condition(ODE, u0, *args):
+
+    x0, t = u0[:-1], u0[-1:]
+    phase_con = ODE(x0, t, *args)[0]
+
+    return x0, t, phase_con
+
+
+def shooting(ODE, u0, *args):
 
     def conds(u0):
 
-        x0, t = u0[:-1], u0[-1:]
+        x0, t, phase_con = phase_condition(ODE, u0, *args)
 
-        sol, sol_time = solve_ode(f, x0, 0, t, 'RK4', 0.01, *args)
+        sol, sol_time = solve_ode(ODE, x0, 0, t, 'RK4', 0.01, *args)
 
-        phase_con = f(x0, t, *args)[0]
         period_con1 = x0[0] - sol[-1, 0]
         period_con2 = x0[1] - sol[-1, 1]
         period_con = np.array([period_con1, period_con2])
@@ -69,15 +76,15 @@ def shooting(f, u0, *args):
     return real_sol
 
 
-def shooting_cycle(f, f_sol, solution, error, *args):
+def shooting_cycle(ODE, ODE_sol, solution, error, *args):
 
     x0, t = solution[:-1], solution[-1]
 
-    X, T = SO_plot(f, x0, 0, t, *args)
+    X, T = SO_plot(ODE, x0, 0, t, *args)
 
     if error == 'yes':
 
-        u1, u2 = f_sol(T, *args)
+        u1, u2 = ODE_sol(T, *args)
 
         error1 = np.zeros(len(T))
         error2 = np.zeros(len(T))
@@ -92,11 +99,11 @@ def shooting_cycle(f, f_sol, solution, error, *args):
         plt.show()
 
 
-def shooting_orbit(f, solution, *args):
+def shooting_orbit(ODE, solution, *args):
 
     x0, t = solution[:-1], solution[-1]
 
-    sol, sol_time = solve_ode(f, x0, 0, t, 'RK4', 0.01, *args)
+    sol, sol_time = solve_ode(ODE, x0, 0, t, 'RK4', 0.01, *args)
 
     plt.plot(sol[:, 0], sol[:, 1])
     plt.show()
@@ -117,8 +124,7 @@ shooting_solution = shooting(Hopf_bif, [1.2, 1.2, 8], args)
 print(shooting_solution)
 
 shooting_cycle(Hopf_bif, Hopf_true_sol, shooting_solution, 'yes', args)
-# shooting_true_cycle(Hopf_bif, shooting_solution, args)
-# shooting_orbit(Hopf_bif, shooting_solution, args)
+shooting_orbit(Hopf_bif, shooting_solution, args)
 
 
 
