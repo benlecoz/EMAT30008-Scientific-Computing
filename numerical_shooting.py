@@ -36,15 +36,13 @@ def Hopf_bif(U, t, args):
 def Hopf_true_sol(t, args):
 
     beta = args[0]
-    # phase_con = args[1]
+    phase_con = 0
     u1 = np.zeros(len(t))
     u2 = np.zeros(len(t))
 
     for i in range(len(t)):
-        # u1[i] = sqrt(beta) * cos(t[i] + phase_con)
-        # u2[i] = sqrt(beta) * sin(t[i] + phase_con)
-        u1[i] = sqrt(beta) * cos(t[i])
-        u2[i] = sqrt(beta) * sin(t[i])
+        u1[i] = sqrt(beta) * cos(t[i] + phase_con)
+        u2[i] = sqrt(beta) * sin(t[i] + phase_con)
 
     return u1, u2
 
@@ -57,11 +55,11 @@ def phase_condition(ODE, u0, *args):
     return x0, t, phase_con
 
 
-def shooting(ODE, u0, *args):
+def shooting(ODE, u0, pc, *args):
 
     def conds(u0):
 
-        x0, t, phase_con = phase_condition(ODE, u0, *args)
+        x0, t, phase_con = pc(ODE, u0, *args)
 
         sol, sol_time = solve_ode(ODE, x0, 0, t, 'RK4', 0.01, *args)
 
@@ -119,7 +117,7 @@ def shooting_orbit(ODE, solution, *args):
 
 
 args = [1, -1]
-shooting_solution = shooting(Hopf_bif, [1.2, 1.2, 8], args)
+shooting_solution = shooting(Hopf_bif, [1.2, 1.2, 8], phase_condition, args)
 
 print(shooting_solution)
 
