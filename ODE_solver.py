@@ -48,7 +48,7 @@ def solve_to(ODE, x1, t1, t2, method, deltat_max, *args):
 
 def solve_ode(ODE, x0, t0, t1, method, deltat_max, *args):
     min_number_steps = math.ceil((t1 - t0) / deltat_max)
-    X = np.zeros((min_number_steps + 1, 2))
+    X = np.zeros((min_number_steps + 1, len(x0)))
     T = np.zeros(min_number_steps + 1)
     X[0] = x0
     T[0] = t0
