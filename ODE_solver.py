@@ -1,25 +1,6 @@
 import matplotlib.pyplot as plt
 import math
 import numpy as np
-import time
-
-
-def f(x, t, *args):
-    return np.array([x], *args)
-
-
-def SO_f(X, t, *args):
-    x, y = X
-    dxdt = y
-    dydt = -x
-    dXdt = np.array([dxdt, dydt, *args])
-    return dXdt
-
-
-def true_solution(t):
-    x = math.exp(t)
-
-    return x
 
 
 def euler_step(ODE, x0, t0, h, *args):
@@ -84,32 +65,6 @@ def solve_ode(ODE, x0, t0, t1, method, deltat_max, *args):
     return X, T
 
 
-def error_plot(ODE, x0, t0, t1, *args):
-    timesteps = np.logspace(-4, 0, 100)
-
-    euler_error = np.zeros(len(timesteps))
-    RK4_error = np.zeros(len(timesteps))
-
-    for i in range(len(timesteps)):
-        true_sol = true_solution(t1)
-        euler_sol, euler_time = solve_ode(ODE, x0, t0, t1, 'euler', timesteps[i], *args)
-        RK4_sol, RK4_time = solve_ode(ODE, x0, t0, t1, 'RK4', timesteps[i], *args)
-        euler_error[i] = abs(euler_sol[-1, -1] - true_sol)
-        RK4_error[i] = abs(RK4_sol[-1, -1] - true_sol)
-
-    ax = plt.gca()
-    ax.scatter(timesteps, euler_error)
-    ax.scatter(timesteps, RK4_error)
-    ax.set_yscale('log')
-    ax.set_xscale('log')
-    ax.set_xlabel('Timestep size')
-    ax.set_ylabel('Absolute Error')
-    ax.legend(('Euler error', 'RK4 error'))
-    plt.show()
-
-    return timesteps, euler_error, RK4_error
-
-
 def SO_plot(ODE, x0, t0, t1, *args):
 
     X, T = solve_ode(ODE, x0, t0, t1, 'RK4', 0.01, *args)
@@ -123,27 +78,58 @@ def SO_plot(ODE, x0, t0, t1, *args):
     return X, T
 
 
-def time_difference(ODE, x0, t0, t1, RK4_timestep, euler_timestep):
-    euler_start_time = time.time()
-    euler_sol, euler_time = solve_ode(ODE, x0, t0, t1, 'euler', euler_timestep)
-    euler_error = abs(euler_sol[-1] - true_solution(t1))
-    print('The Euler error value is', euler_error, 'achieved in', time.time() - euler_start_time,
-          'seconds, for timestep',
-          euler_timestep)
+def main():
 
-    RK4_start_time = time.time()
-    RK4_sol, RK4_time = solve_ode(ODE, x0, t0, t1, 'RK4', RK4_timestep)
-    RK4_error = abs(RK4_sol[-1] - true_solution(t1))
-    print('The RK4 error value is', RK4_error, 'achieved in', time.time() - RK4_start_time, 'seconds, for timestep',
-          RK4_timestep)
+    def FO_f(x, t, *args):
+        """
+        Function for first Order Differential Equation (DE) dxdt = x
+            Parameters:
+                x (int):    x value
+                t (int):    t value
+                *args:      any additional arguments that ODE expects
+
+            Returns:
+                Array of dxdt at (x,t)
+        """
+
+        dxdt = np.array([x], *args)
+
+        return dxdt
+
+    def FO_true_solution(t):
+        """
+        True solution to the first ODE dxdt = x
+            Parameters:
+                t (int):    t value
+
+            Returns:
+                Result of x = e^(t)
+        """
+        x = math.exp(t)
+
+        return x
+
+    def SO_f(u, t, *args):
+        """
+        Second Order DE function for d2xdt2 = -x
+            Parameters:
+                u (list):    x and t values
+                *args:      any additional arguments that ODE expects
+
+            Returns:
+                Array of dXdt at (x,t)
+        """
+        x, y = u
+        dxdt = y
+        dydt = -x
+        dXdt = np.array([dxdt, dydt, *args])
+        return dXdt
+
+    SO_plot(SO_f, [0, 2], 0, 50)
 
 
 if __name__ == "__main__":
+    main()
 
-    # time_difference(f, 1, [0, 2], 0.3, 9.7 * 10 ** (-5), 1)
-    # one, two, three = error_plot(f, 1, [0, 2], 1)
-
-    one, two = SO_plot(SO_f, [0, 2], 0, 50)
-    error_plot(f, 1, 0, 1)
 
 
