@@ -33,7 +33,7 @@ def Hopf_bif(U, t, args):
     return dudt
 
 
-def Hopf_true_sol(t, args):
+def Hopf_bif_true_sol(t, args):
 
     beta = args[0]
     phase_con = 0
@@ -45,6 +45,20 @@ def Hopf_true_sol(t, args):
         u2[i] = sqrt(beta) * sin(t[i] + phase_con)
 
     return u1, u2
+
+
+def Hopf_ext(U, t, args):
+
+    beta = args[0]
+    sigma = args[1]
+
+    u1, u2, u3 = U
+    du1dt = beta * u1 - u2 + sigma * u1 * (u1 ** 2 + u2 ** 2)
+    du2dt = u1 + beta * u2 + sigma * u2 * (u1 ** 2 + u2 ** 2)
+    du3dt = - u3
+    dudt = np.array([du1dt, du2dt, du3dt])
+
+    return dudt
 
 
 def phase_condition(ODE, u0, *args):
@@ -63,11 +77,12 @@ def shooting(ODE, u0, pc, *args):
 
         sol, sol_time = solve_ode(ODE, x0, 0, t, 'RK4', 0.01, *args)
 
-        period_con1 = x0[0] - sol[-1, 0]
-        period_con2 = x0[1] - sol[-1, 1]
-        period_con = np.array([period_con1, period_con2])
+        period_con = []
 
-        return np.r_[phase_con, period_con]
+        for i in range(len(x0)):
+            period_con.append(x0[i] - sol[-1, i])
+
+        return np.r_[phase_con, np.array(period_con)]
 
     real_sol = fsolve(conds, u0)
 
@@ -116,13 +131,16 @@ def shooting_orbit(ODE, solution, *args):
 # shooting_orbit(SO_f2, shooting_solution, args)
 
 
+# args = [1, -1]
+# shooting_solution = shooting(Hopf_bif, [1.2, 1.2, 8], phase_condition, args)
+#
+# shooting_cycle(Hopf_bif, Hopf_bif_true_sol, shooting_solution, 'yes', args)
+# shooting_orbit(Hopf_bif, shooting_solution, args)
+
 args = [1, -1]
-shooting_solution = shooting(Hopf_bif, [1.2, 1.2, 8], phase_condition, args)
+shooting_solution = shooting(Hopf_ext, [1, 1, 1, 8], phase_condition, args)
 
 print(shooting_solution)
-
-shooting_cycle(Hopf_bif, Hopf_true_sol, shooting_solution, 'yes', args)
-shooting_orbit(Hopf_bif, shooting_solution, args)
 
 
 
