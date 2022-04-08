@@ -4,6 +4,20 @@ import numpy as np
 
 
 def euler_step(ODE, x0, t0, h, *args):
+    """
+    Performs a single step of the Euler, at (x0, t0) for step size h.
+
+        Parameters:
+            ODE (function):     the ODE function that we want to solve
+            x0 (float/list):    initial x value(s)
+            t0 (float):         initial t value
+            h (float):          step size
+            *args (array):      any additional arguments that ODE expects
+
+        Returns:
+            New values (x1, t1) of the ODE after one Euler step
+    """
+
     x1 = x0 + h * ODE(x0, t0, *args)
     t1 = t0 + h
 
@@ -11,6 +25,20 @@ def euler_step(ODE, x0, t0, h, *args):
 
 
 def RK4_step(ODE, x0, t0, h, *args):
+    """
+    Performs a single step of the 4th Runge-Kutta method, at (x0, t0) for step size h.
+
+        Parameters:
+            ODE (function):     the ODE function that we want to solve
+            x0 (float/ndarray):    initial x value(s)
+            t0 (float):         initial t value
+            h (float):          step size
+            *args (ndarray):      any additional arguments that ODE expects
+
+        Returns:
+            New values (x1, t1) of the ODE after one RK4 step
+    """
+
     k1 = ODE(x0, t0, *args)
     k2 = ODE(x0 + h * 0.5 * k1, t0 + 0.5 * h, *args)
     k3 = ODE(x0 + h * 0.5 * k2, t0 + 0.5 * h, *args)
@@ -25,28 +53,54 @@ def RK4_step(ODE, x0, t0, h, *args):
 
 
 def solve_to(ODE, x1, t1, t2, method, deltat_max, *args):
+    """
+    Solves the ODE for x1 between t1 and t2 using a specific method, in steps no bigger than delta_tmax
+
+        Parameters:
+            ODE (function):     the ODE function that we want to solve
+            x1 (ndarray):       initial x value to solve for
+            t1 (float):         initial time value
+            t2 (float):         final time value
+            method (str):       name of the method to use, either 'euler' or 'RK4'
+            deltat_max (float): maximum step size to use
+            *args (ndarray):    any additional arguments that ODE expects
+
+        Returns:
+            Solution to the ODE found at t2, using method and with step size no bigger than delta_tmax
+    """
+
     min_number_steps = math.floor((t2 - t1) / deltat_max)
 
     if method == 'euler':
-
-        for i in range(min_number_steps):
-            x1, t1 = euler_step(ODE, x1, t1, deltat_max, *args)
-
-        if t1 != t2:
-            x1, t1 = euler_step(ODE, x1, t1, t2 - t1, *args)
-
+        use_method = euler_step
     if method == 'RK4':
+        use_method = RK4_step
 
-        for i in range(min_number_steps):
-            x1, t1 = RK4_step(ODE, x1, t1, deltat_max, *args)
+    for i in range(min_number_steps):
+        x1, t1 = use_method(ODE, x1, t1, deltat_max, *args)
 
-        if t1 != t2:
-            x1, t1 = RK4_step(ODE, x1, t1, t2 - t1, *args)
+    if t1 != t2:
+        x1, t1 = use_method(ODE, x1, t1, t2 - t1, *args)
 
     return x1
 
 
 def solve_ode(ODE, x0, t0, t1, method, deltat_max, *args):
+    """
+    Solves the ODE for x1 between t1 and t2 using a specific method, in steps no bigger than delta_tmax
+
+        Parameters:
+            ODE (function):     the ODE function that we want to solve
+            x0 (ndarray):       initial x value to solve for
+            t0 (float):         initial time value
+            t1 (float):         final time value
+            method (str):       name of the method to use
+            deltat_max (float): maximum step size to use
+            *args (ndarray):    any additional arguments that ODE expects
+
+        Returns:
+            Solution to the ODE found at t2, using method and with step size no bigger than delta_tmax
+    """
     min_number_steps = math.ceil((t1 - t0) / deltat_max)
     X = np.zeros((min_number_steps + 1, len(x0)))
     T = np.zeros(min_number_steps + 1)
