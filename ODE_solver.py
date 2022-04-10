@@ -53,6 +53,17 @@ def RK4_step(ODE, x0, t0, h, *args):
 
 
 def input_test(test, test_name, test_type):
+    """
+    Tests the type of specific parameters
+
+        Parameters:
+            test (Any):         parameter tested
+            test_name (str):    name of parameter tested
+            test_type (str):    type that the parameter should be, either 'int_or_float', 'string' or 'function'
+
+        Returns:
+            An error with a description of the issue with the type of the parameter if the test is failed
+    """
 
     def int_or_float():
         if not isinstance(test, (float, int)):
@@ -95,13 +106,14 @@ def solve_to(ODE, x1, t1, t2, method, deltat_max, *args):
 
     min_number_steps = math.floor((t2 - t1) / deltat_max)
 
+    # test to see if the inputted method has the right value
     if method == 'euler':
         use_method = euler_step
     elif method == 'rungekutta':
         use_method = RK4_step
     else:
         raise TypeError(
-            f"The method '{method}' is not accepted, please use 'euler' or 'rungekutta'")
+            f"The method '{method}' is not accepted, please try 'euler' or 'rungekutta'")
 
     for i in range(min_number_steps):
         x1, t1 = use_method(ODE, x1, t1, deltat_max, *args)
@@ -130,17 +142,26 @@ def solve_ode(ODE, x0, t0, t1, method, deltat_max, *args):
     """
 
     def input_check():
+        """
+            Test all the inputs of the solve_ode function are the right type
+        """
 
+        # test inputs for all the initial x conditions, loop ensures tests on single or system of ODE
         for x in range(len(x0)):
             input_test(x, 'x0', 'int_or_float')
 
+        # tests inputs for the time values and the maximum timestep
         input_test(t0, 't0', 'int_or_float')
         input_test(t1, 't1', 'int_or_float')
         input_test(deltat_max, 'deltat_max', 'int_or_float')
 
+        # tests that the inputted ODE to solve is a function
         input_test(ODE, 'ODE', 'function')
 
+        # tests that the inputted method is a string
         input_test(method, 'method', 'string')
+
+        print('All of the parameters are of the correct type, the ODE can now be solved')
 
     input_check()
 
@@ -191,19 +212,6 @@ def main():
 
         return dxdt
 
-    def FO_true_solution(t):
-        """
-        True solution to the first ODE dxdt = x
-            Parameters:
-                t (int):    t value
-
-            Returns:
-                Result of x = e^(t)
-        """
-        x = math.exp(t)
-
-        return x
-
     def SO_f(u, t, *args):
         """
         Second Order DE function for d2xdt2 = -x
@@ -220,8 +228,7 @@ def main():
         dXdt = np.array([dxdt, dydt, *args])
         return dXdt
 
-    # SO_plot(SO_f, [0, 2], 0, 50)
-    solve_ode(FO_f, [1], 0, 2, 'rungekutta', 0.01)
+    SO_plot(SO_f, [0, 2], 0, 50)
 
 
 if __name__ == "__main__":
