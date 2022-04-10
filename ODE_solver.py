@@ -36,7 +36,7 @@ def RK4_step(ODE, x0, t0, h, *args):
             *args (ndarray):      any additional arguments that ODE expects
 
         Returns:
-            New values (x1, t1) of the ODE after one RK4 step
+            New values (x1, t1) of the ODE after one Runge Kutta step
     """
 
     k1 = ODE(x0, t0, *args)
@@ -52,6 +52,30 @@ def RK4_step(ODE, x0, t0, h, *args):
     return x1, t1
 
 
+def input_test(test, test_name, test_type):
+
+    def int_or_float():
+        if not isinstance(test, (float, int)):
+            raise TypeError(f"The argument passed for {test_name} is not a float or an integer, but a {type(test)}. Please input an integer or a float")
+
+    if test_type == 'int_or_float':
+        int_or_float()
+
+    def function():
+        if not callable(test):
+            raise TypeError(f"The argument passed for {test_name} is not a function, but a {type(test)}. Please input a function")
+
+    if test_type == 'function':
+        function()
+
+    def string():
+        if not isinstance(test, str):
+            raise TypeError(f"The argument passed for {test_name} is not a string, but a {type(test)}. Please input a string")
+
+    if test_type == 'string':
+        string()
+
+
 def solve_to(ODE, x1, t1, t2, method, deltat_max, *args):
     """
     Solves the ODE for x1 between t1 and t2 using a specific method, in steps no bigger than delta_tmax
@@ -61,7 +85,7 @@ def solve_to(ODE, x1, t1, t2, method, deltat_max, *args):
             x1 (ndarray):       initial x value to solve for
             t1 (float):         initial time value
             t2 (float):         final time value
-            method (str):       name of the method to use, either 'euler' or 'RK4'
+            method (str):       name of the method to use, either 'euler' or 'rungekutta'
             deltat_max (float): maximum step size to use
             *args (ndarray):    any additional arguments that ODE expects
 
@@ -73,8 +97,11 @@ def solve_to(ODE, x1, t1, t2, method, deltat_max, *args):
 
     if method == 'euler':
         use_method = euler_step
-    if method == 'RK4':
+    elif method == 'rungekutta':
         use_method = RK4_step
+    else:
+        raise TypeError(
+            f"The method '{method}' is not accepted, please use 'euler' or 'rungekutta'")
 
     for i in range(min_number_steps):
         x1, t1 = use_method(ODE, x1, t1, deltat_max, *args)
@@ -94,13 +121,29 @@ def solve_ode(ODE, x0, t0, t1, method, deltat_max, *args):
             x0 (ndarray):       initial x value to solve for
             t0 (float):         initial time value
             t1 (float):         final time value
-            method (str):       name of the method to use
+            method (str):       name of the method to use, either 'euler' or 'rungekutta'
             deltat_max (float): maximum step size to use
             *args (ndarray):    any additional arguments that ODE expects
 
         Returns:
             Solution to the ODE found at t2, using method and with step size no bigger than delta_tmax
     """
+
+    def input_check():
+
+        for x in range(len(x0)):
+            input_test(x, 'x0', 'int_or_float')
+
+        input_test(t0, 't0', 'int_or_float')
+        input_test(t1, 't1', 'int_or_float')
+        input_test(deltat_max, 'deltat_max', 'int_or_float')
+
+        input_test(ODE, 'ODE', 'function')
+
+        input_test(method, 'method', 'string')
+
+    input_check()
+
     min_number_steps = math.ceil((t1 - t0) / deltat_max)
     X = np.zeros((min_number_steps + 1, len(x0)))
     T = np.zeros(min_number_steps + 1)
@@ -120,11 +163,10 @@ def solve_ode(ODE, x0, t0, t1, method, deltat_max, *args):
 
 
 def SO_plot(ODE, x0, t0, t1, *args):
+    X, T = solve_ode(ODE, x0, t0, t1, 'rungekutta', 0.01, *args)
 
-    X, T = solve_ode(ODE, x0, t0, t1, 'RK4', 0.01, *args)
-
-    plt.plot(T, X[:, 0], label = 'S1')
-    plt.plot(T, X[:, 1], label = 'S2')
+    plt.plot(T, X[:, 0], label='S1')
+    plt.plot(T, X[:, 1], label='S2')
     plt.legend()
 
     plt.show()
@@ -133,7 +175,6 @@ def SO_plot(ODE, x0, t0, t1, *args):
 
 
 def main():
-
     def FO_f(x, t, *args):
         """
         Function for first Order Differential Equation (DE) dxdt = x
@@ -179,11 +220,9 @@ def main():
         dXdt = np.array([dxdt, dydt, *args])
         return dXdt
 
-    SO_plot(SO_f, [0, 2], 0, 50)
+    # SO_plot(SO_f, [0, 2], 0, 50)
+    solve_ode(FO_f, [1], 0, 2, 'rungekutta', 0.01)
 
 
 if __name__ == "__main__":
     main()
-
-
-
