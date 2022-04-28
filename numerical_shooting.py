@@ -5,12 +5,10 @@ from scipy.optimize import fsolve
 from math import sqrt, cos, sin
 
 
-def SO_f2(X, t, args):
+def predator_prey(X, t, args):
 
     x, y = X
-    a = args[0]
-    b = args[1]
-    d = args[2]
+    a, b, d = args[0], args[1], args[2]
 
     dxdt = x * (1 - x) - (a * x * y) / (d + x)
     dydt = b * y * (1 - y / x)
@@ -63,30 +61,29 @@ def Hopf_ext(U, t, args):
 
 def phase_condition(ODE, u0, *args):
 
-    x0, t = u0[:-1], u0[-1:]
+    x0, t = u0[:-1], u0[-1]
     phase_con = ODE(x0, t, *args)[0]
 
     return x0, t, phase_con
 
 
-def shooting(ODE, u0, pc, *args):
+def shooting(ODE):
 
-    def conds(u0):
-
+    def conds(u0, pc, *args):
         x0, t, phase_con = pc(ODE, u0, *args)
 
-        sol, sol_time = solve_ode(ODE, x0, 0, t, 'RK4', 0.01, *args)
+        sol, sol_time = solve_ode(ODE, x0, 0, t, 'rungekutta', 0.01, True, *args)
 
         period_con = []
 
         for i in range(len(x0)):
             period_con.append(x0[i] - sol[-1, i])
 
-        return np.r_[phase_con, np.array(period_con)]
+        full_conds = np.r_[np.array(period_con), phase_con]
 
-    real_sol = fsolve(conds, u0)
+        return full_conds
 
-    return real_sol
+    return conds
 
 
 def shooting_cycle(ODE, ODE_sol, solution, error, *args):
@@ -115,35 +112,34 @@ def shooting_cycle(ODE, ODE_sol, solution, error, *args):
 def shooting_orbit(ODE, solution, *args):
 
     x0, t = solution[:-1], solution[-1]
-
+    print(t)
     sol, sol_time = solve_ode(ODE, x0, 0, t, 'RK4', 0.01, *args)
 
     plt.plot(sol[:, 0], sol[:, 1])
     plt.show()
 
 
-# args = [1, 0.16, 0.1]
-# shooting_solution = shooting(SO_f2, [0.2, 0.2, 21], args)
-#
-# print(shooting_solution)
-#
-# shooting_cycle(SO_f2, shooting_solution, args)
-# shooting_orbit(SO_f2, shooting_solution, args)
+def main():
+    # args = [1, 0.16, 0.1]
+    # shooting_solution = shooting(predator_prey, [0.2, 0.2, 21], args)
+    #
+    # shooting_cycle(predator_prey, shooting_solution, args)
+    # shooting_orbit(predator_prey, shooting_solution, args)
+
+    hopf_args = [1, -1]
+    u0 = [1.2, 1.2, 8]
+    pc = phase_condition
+
+    real_sol = fsolve(shooting(Hopf_bif), u0, (pc, hopf_args), full_output=True)
+    print(real_sol[0])
+
+    # shooting_cycle(Hopf_bif, Hopf_bif_true_sol, shooting_solution, 'yes', args)
+    # shooting_orbit(Hopf_bif, shooting_solution, args)
+
+    # args = [1, -1]
+    # shooting_solution = shooting(Hopf_ext, [1, 1, 1, 8], phase_condition, args)
 
 
-# args = [1, -1]
-# shooting_solution = shooting(Hopf_bif, [1.2, 1.2, 8], phase_condition, args)
-#
-# shooting_cycle(Hopf_bif, Hopf_bif_true_sol, shooting_solution, 'yes', args)
-# shooting_orbit(Hopf_bif, shooting_solution, args)
-
-args = [1, -1]
-shooting_solution = shooting(Hopf_ext, [1, 1, 1, 8], phase_condition, args)
-
-print(shooting_solution)
-
-
-
-
-
+if __name__ == '__main__':
+    main()
 
