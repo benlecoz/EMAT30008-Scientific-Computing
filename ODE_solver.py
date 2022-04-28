@@ -124,7 +124,7 @@ def solve_to(ODE, x1, t1, t2, method, deltat_max, *args):
     return x1
 
 
-def solve_ode(ODE, x0, t0, t1, method, deltat_max, *args):
+def solve_ode(ODE, x0, t0, t1, method, deltat_max, system, *args):
     """
     Solves the ODE for x1 between t1 and t2 using a specific method, in steps no bigger than delta_tmax
 
@@ -135,6 +135,7 @@ def solve_ode(ODE, x0, t0, t1, method, deltat_max, *args):
             t1 (float):         final time value
             method (str):       name of the method to use, either 'euler' or 'rungekutta'
             deltat_max (float): maximum step size to use
+            system (bool):      boolean value that is True if the ODE is a system of equations, False if single ODE
             *args (ndarray):    any additional arguments that ODE expects
 
         Returns:
@@ -146,9 +147,12 @@ def solve_ode(ODE, x0, t0, t1, method, deltat_max, *args):
             Test all the inputs of the solve_ode function are the right type
         """
 
-        # test inputs for all the initial x conditions, loop ensures tests on single or system of ODE
-        for x in range(len(x0)):
-            input_test(x, 'x0', 'int_or_float')
+        # test inputs for all the initial x conditions, loop ensures tests on system of ODE
+        if system:
+            for x in range(len(x0)):
+                input_test(x, 'x0', 'int_or_float')
+        else:
+            input_test(x0, 'x0', 'int_or_float')
 
         # tests inputs for the time values and the maximum timestep
         input_test(t0, 't0', 'int_or_float')
@@ -161,12 +165,16 @@ def solve_ode(ODE, x0, t0, t1, method, deltat_max, *args):
         # tests that the inputted method is a string
         input_test(method, 'method', 'string')
 
-        print('All of the parameters are of the correct type, the ODE can now be solved')
-
     input_check()
 
-    min_number_steps = math.ceil((t1 - t0) / deltat_max)
-    X = np.zeros((min_number_steps + 1, len(x0)))
+    min_number_steps = math.ceil(abs(t1 - t0) / deltat_max)
+
+    # this ensures that the right number of columns depending on if the ODE is single or system
+    if system:
+        X = np.zeros((min_number_steps + 1, len(x0)))
+    else:
+        X = np.zeros((min_number_steps + 1, 1))
+
     T = np.zeros(min_number_steps + 1)
     X[0] = x0
     T[0] = t0
@@ -212,23 +220,29 @@ def main():
 
         return dxdt
 
-    def SO_f(u, t, *args):
+    def SO_f(u, t):
         """
-        Second Order DE function for d2xdt2 = -x
+        System of ODE function for d2xdt2 = -x, also expressed as dx/dt = y, dy/dt = -x
             Parameters:
-                u (list):    x and t values
-                *args:      any additional arguments that ODE expects
+                u (list):    x and y values
 
             Returns:
                 Array of dXdt at (x,t)
         """
+
         x, y = u
+
         dxdt = y
         dydt = -x
-        dXdt = np.array([dxdt, dydt, *args])
+
+        dXdt = np.array([dxdt, dydt])
+
         return dXdt
 
-    SO_plot(SO_f, [0, 2], 0, 50)
+    solution1 = solve_ode(FO_f, 1, 0, 1, 'euler', 0.01, False)
+    solution2 = solve_ode(FO_f, 1, 0, 1, 'rungekutta', 0.01, False)
+
+    # SO_plot(SO_f, [0, 2], 0, 50)
 
 
 if __name__ == "__main__":
