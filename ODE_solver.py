@@ -66,7 +66,7 @@ def input_test(test, test_name, test_type):
     """
 
     def int_or_float():
-        if not isinstance(test, (float, int)):
+        if not isinstance(test, (float, int)) and type(test) != np.int_ and type(test) != np.float_:
             raise TypeError(f"The argument passed for {test_name} is not a float or an integer, but a {type(test)}. Please input an integer or a float")
 
     if test_type == 'int_or_float':
