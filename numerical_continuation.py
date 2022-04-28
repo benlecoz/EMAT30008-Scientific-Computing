@@ -2,47 +2,85 @@ from scipy.optimize import fsolve
 import matplotlib.pyplot as plt
 import numpy as np
 import math
+from numerical_shooting import shooting, phase_condition
+import warnings
 
 
-def cubic(x, args):
+def cubic(x, t, args):
     c = args
     eq = x ** 3 - x + c
     return eq
 
 
-def nat_param_continuation(ODE, u0, param, step, solver):
+def Hopf_bif(U, t, args):
 
-    args = param[0]
-    first_sol = solver(ODE, u0, args)
+    beta = args
+    u1, u2 = U
 
-    number_steps = math.ceil(abs((param[1] - param[0])) / step + 1)
+    du1dt = beta * u1 - u2 - u1 * (u1 ** 2 + u2 ** 2)
+    du2dt = u1 + beta * u2 - u2 * (u1 ** 2 + u2 ** 2)
+    dudt = np.array([du1dt, du2dt])
 
-    sol = np.zeros((number_steps, len(u0)))
-    param_list = np.zeros(number_steps)
+    return dudt
+
+
+def mod_Hopf_bif(U, t, args):
+
+    beta = args
+    u1, u2 = U
+
+    du1dt = beta * u1 - u2 + u1 * (u1 ** 2 + u2 ** 2) - u1 * (u1 ** 2 + u2 ** 2) ** 2
+    du2dt = u1 + beta * u2 + u2 * (u1 ** 2 + u2 ** 2) - u2 * (u1 ** 2 + u2 ** 2) ** 2
+    dudt = np.array([du1dt, du2dt])
+
+    return dudt
+
+
+def nat_param_continuation(ODE, u0, param_range, param_number, solver, discretisation, pc):
+
+    args = param_range[1]
+
+    print('u0 is', u0)
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        first_sol = solver(discretisation(ODE), u0, (pc, args))
+    print('u1 is', first_sol)
+
+    param_list = np.linspace(param_range[1], param_range[0], param_number)
+
+    sol = np.zeros((param_number, len(u0)))
     sol[0] = first_sol
-    param_list[0] = param[0]
 
-    for i in range(number_steps - 1):
+    for i in range(param_number - 1):
 
-        param_list[i+1] = param_list[i] + step
+        sol[i+1] = solver(discretisation(ODE), np.round(sol[i], 7), (pc, param_list[i+1]))
 
-        if param_list[i+1] <= param[-1]:
-            sol[i+1] = solver(ODE, sol[i], args = param_list[i+1])
-        else:
-            param_list[-1] = param[1]
-            sol[i + 1] = solver(ODE, sol[i], args = param_list[-1])
+        print(sol[i], param_list[i])
 
     return sol, param_list
 
 
-c_interval = np.array([-2, 2])
-cubic_sol, cubic_param_list = nat_param_continuation(cubic, np.array([1]), c_interval, 0.015, fsolve)
+# c_interval = np.array([0, 2])
+# u0 = np.array([1])
+# pc = phase_condition
+# cubic_sol, cubic_param_list = nat_param_continuation(cubic, u0, c_interval, 100, fsolve, lambda x: x, pc)
+#
+# plt.plot(cubic_param_list, cubic_sol)
+# plt.show()
 
-print(cubic_sol)
+# beta_interval = np.array([-1, 2])
+# u0 = np.array([1.2, 1.2, 6.4])
+# hopf_sol, hopf_param_list = nat_param_continuation(Hopf_bif, u0, beta_interval, 50, fsolve, shooting, phase_condition)
+#
+# plt.plot(hopf_param_list, hopf_sol[:, 0])
+# plt.show()
 
-plt.plot(cubic_param_list, cubic_sol)
+beta_interval = np.array([-1, 2])
+u0 = np.array([1, 1, 6])
+mod_hopf_sol, mod_hopf_param_list = nat_param_continuation(mod_Hopf_bif, u0, beta_interval, 50, fsolve, shooting, phase_condition)
+
+plt.plot(mod_hopf_param_list, mod_hopf_sol[:, 0])
 plt.show()
-
 
 
 
