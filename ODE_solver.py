@@ -12,7 +12,7 @@ def euler_step(ODE, x0, t0, h, *args):
             x0 (float/list):    initial x value(s)
             t0 (float):         initial t value
             h (float):          step size
-            *args (array):      any additional arguments that ODE expects
+            *args (ndarray):    any additional arguments that ODE expects
 
         Returns:
             New values (x1, t1) of the ODE after one Euler step
@@ -86,6 +86,13 @@ def input_test(test, test_name, test_type):
     if test_type == 'string':
         string()
 
+    def boolean():
+        if not isinstance(test, bool):
+            raise TypeError(f"The argument passed for {test_name} is not a boolean, but a {type(test)}. Please input a boolean")
+
+    if test_type == 'boolean':
+        boolean()
+
 
 def solve_to(ODE, x1, t1, t2, method, deltat_max, *args):
     """
@@ -96,7 +103,7 @@ def solve_to(ODE, x1, t1, t2, method, deltat_max, *args):
             x1 (ndarray):       initial x value to solve for
             t1 (float):         initial time value
             t2 (float):         final time value
-            method (str):       name of the method to use, either 'euler' or 'rungekutta'
+            method (function):  name of the function to use as the method, either 'euler' or 'rungekutta'
             deltat_max (float): maximum step size to use
             *args (ndarray):    any additional arguments that ODE expects
 
@@ -106,25 +113,16 @@ def solve_to(ODE, x1, t1, t2, method, deltat_max, *args):
 
     min_number_steps = math.floor((t2 - t1) / deltat_max)
 
-    # test to see if the inputted method has the right value
-    if method == 'euler':
-        use_method = euler_step
-    elif method == 'rungekutta':
-        use_method = RK4_step
-    else:
-        raise TypeError(
-            f"The method '{method}' is not accepted, please try 'euler' or 'rungekutta'")
-
     for i in range(min_number_steps):
-        x1, t1 = use_method(ODE, x1, t1, deltat_max, *args)
+        x1, t1 = method(ODE, x1, t1, deltat_max, *args)
 
     if t1 != t2:
-        x1, t1 = use_method(ODE, x1, t1, t2 - t1, *args)
+        x1, t1 = method(ODE, x1, t1, t2 - t1, *args)
 
     return x1
 
 
-def solve_ode(ODE, x0, t0, t1, method, deltat_max, system, *args):
+def solve_ode(ODE, x0, t0, t1, method_name, deltat_max, system, *args):
     """
     Solves the ODE for x1 between t1 and t2 using a specific method, in steps no bigger than delta_tmax
 
@@ -133,7 +131,7 @@ def solve_ode(ODE, x0, t0, t1, method, deltat_max, system, *args):
             x0 (ndarray):       initial x value to solve for
             t0 (float):         initial time value
             t1 (float):         final time value
-            method (str):       name of the method to use, either 'euler' or 'rungekutta'
+            method_name (str):       name of the method to use, either 'euler' or 'rungekutta'
             deltat_max (float): maximum step size to use
             system (bool):      boolean value that is True if the ODE is a system of equations, False if single ODE
             *args (ndarray):    any additional arguments that ODE expects
@@ -142,30 +140,51 @@ def solve_ode(ODE, x0, t0, t1, method, deltat_max, system, *args):
             Solution to the ODE found at t2, using method and with step size no bigger than delta_tmax
     """
 
-    def input_check():
-        """
-            Test all the inputs of the solve_ode function are the right type
-        """
+    """
+        Test all the inputs of the solve_ode function are the right type
+    """
 
-        # test inputs for all the initial x conditions, loop ensures tests on system of ODE
-        if system:
-            for x in range(len(x0)):
-                input_test(x, 'x0', 'int_or_float')
-        else:
-            input_test(x0, 'x0', 'int_or_float')
+    # tests that the inputted ODE to solve is a function
+    input_test(ODE, 'ODE', 'function')
 
-        # tests inputs for the time values and the maximum timestep
-        input_test(t0, 't0', 'int_or_float')
-        input_test(t1, 't1', 'int_or_float')
-        input_test(deltat_max, 'deltat_max', 'int_or_float')
+    # tests that the inputted system parameter is a boolean
+    input_test(system, 'system', 'boolean')
 
-        # tests that the inputted ODE to solve is a function
-        input_test(ODE, 'ODE', 'function')
+    # test inputs for all the initial x conditions, loop ensures tests on system of ODE
+    if system:
+        for x in range(len(x0)):
+            input_test(x, 'x0', 'int_or_float')
+    else:
+        input_test(x0, 'x0', 'int_or_float')
 
-        # tests that the inputted method is a string
-        input_test(method, 'method', 'string')
+    # tests inputs for the time values and the maximum timestep
+    input_test(t0, 't0', 'int_or_float')
+    input_test(t1, 't1', 'int_or_float')
+    input_test(deltat_max, 'deltat_max', 'int_or_float')
 
-    input_check()
+    # tests that the inputted method is a string
+    input_test(method_name, 'method', 'string')
+
+    # if there are any arguments passed, tests all the args inputs are the right type
+    if len(args) != 0:
+        for i in range(len(args)):
+            input_test(args[i][0], 'args', 'int_or_float')
+
+    """
+        Test to see if the inputted method has the right name
+    """
+
+    if method_name == 'euler':
+        method = euler_step
+    elif method_name == 'rungekutta':
+        method = RK4_step
+    else:
+        raise TypeError(
+            f"The method '{method_name}' is not accepted, please try 'euler' or 'rungekutta'")
+
+    """
+        Start the solve_ode code
+    """
 
     min_number_steps = math.ceil(abs(t1 - t0) / deltat_max)
 
@@ -192,7 +211,7 @@ def solve_ode(ODE, x0, t0, t1, method, deltat_max, system, *args):
 
 
 def SO_plot(ODE, x0, t0, t1, *args):
-    X, T = solve_ode(ODE, x0, t0, t1, 'rungekutta', 0.01, *args)
+    X, T = solve_ode(ODE, x0, t0, t1, 'rungekutta', 0.01, True, *args)
 
     plt.plot(T, X[:, 0], label='S1')
     plt.plot(T, X[:, 1], label='S2')
@@ -220,29 +239,34 @@ def main():
 
         return dxdt
 
-    def SO_f(u, t):
+    def SO_f(u, t, args):
         """
-        System of ODE function for d2xdt2 = -x, also expressed as dx/dt = y, dy/dt = -x
+        Second Order DE function for d2xdt2 = -x, also expressed as dx/dt = y, dy/dt = -x
             Parameters:
-                u (list):    x and y values
+                u (list):           initial x values
+                t (int):            initial t value
+                *args (ndarray):    any additional arguments that ODE expects
 
             Returns:
                 Array of dXdt at (x,t)
         """
-
         x, y = u
-
         dxdt = y
-        dydt = -x
+        dydt = args[0] * x
 
         dXdt = np.array([dxdt, dydt])
 
         return dXdt
 
-    solution1 = solve_ode(FO_f, 1, 0, 1, 'euler', 0.01, False)
-    solution2 = solve_ode(FO_f, 1, 0, 1, 'rungekutta', 0.01, False)
+    # solution1 = solve_ode(FO_f, 1, 0, 1, 'euler', 0.01, False)
 
-    # SO_plot(SO_f, [0, 2], 0, 50)
+    # solution2 = solve_ode(FO_f, 1, 0, 1, 'rungekutta', 0.01, False)
+    # print(solution2)
+
+    solution3 = solve_ode(SO_f, [1, 1], 0, 10, 'rungekutta', 0.01, True, np.array([-1]))
+    print(solution3)
+
+    SO_plot(SO_f, [1, 1], 0, 10, np.array([-1]))
 
 
 if __name__ == "__main__":
