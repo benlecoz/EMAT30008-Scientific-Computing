@@ -210,19 +210,26 @@ def solve_ode(ODE, x0, t0, t1, method_name, deltat_max, system, *args):
     return X, T
 
 
-def SO_plot(ODE, x0, t0, t1, *args):
-    X, T = solve_ode(ODE, x0, t0, t1, 'rungekutta', 0.01, True, *args)
+def solve_ode_plot(ODE, x0, t0, t1, system, show, *args):
 
-    plt.plot(T, X[:, 0], label='S1')
-    plt.plot(T, X[:, 1], label='S2')
+    X, T = solve_ode(ODE, x0, t0, t1, 'rungekutta', 0.01, system, *args)
+
+    if system:
+        for i in range(len(x0)):
+            plt.plot(T, X[:, i], label=('S' + str(i)))
+    else:
+        plt.plot(T, X[:, 0], label='S0')
+
     plt.legend()
 
-    plt.show()
+    if show:
+        plt.show()
 
     return X, T
 
 
 def main():
+
     def FO_f(x, t, *args):
         """
         Function for first Order Differential Equation (DE) dxdt = x
