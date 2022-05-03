@@ -242,6 +242,32 @@ def main():
 
         return dxdt
 
+    def FO_true_solution(t):
+        """
+        True solution to the first ODE dxdt = x defined above
+            Parameters:
+                t (ndarray):    t value
+
+            Returns:
+                Result of x = e^(t)
+        """
+        x = np.exp(t)
+
+        return x
+
+    FO_euler, FO_euler_time = solve_ode(FO_f, 1, 0, 1, 'euler', 0.01, False)
+
+    FO_RK4, FO_RK4_time = solve_ode(FO_f, 1, 0, 1, 'RK4', 0.01, False)
+
+    solve_ode_plot(FO_euler, FO_euler_time, False, False, 'euler')
+    solve_ode_plot(FO_RK4, FO_RK4_time, False, False, 'RK4')
+
+    plt.plot(FO_euler_time, FO_true_solution(FO_euler_time), label='SO_true')
+    plt.xlabel('t')
+    plt.ylabel('x')
+    plt.legend()
+    plt.show()
+
     def SO_f(u, t, args):
         """
         Second Order DE function for d2xdt2 = -x, also expressed as dx/dt = y, dy/dt = -x
