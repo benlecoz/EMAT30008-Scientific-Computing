@@ -235,25 +235,28 @@ def SO_ode_plot(solution, time):
 
 def main():
 
-    def FO_f(x, t, *args):
+    """
+        Plot the solutions to the first order ODE, dx/dt = x
+    """
+
+    def FO_f(x, t):
         """
-        Function for first Order Differential Equation (DE) dxdt = x
+        Function for first order ODE dxdt = x
             Parameters:
                 x (int):    x value
                 t (int):    t value
-                *args:      any additional arguments that ODE expects
 
             Returns:
                 Array of dxdt at (x,t)
         """
 
-        dxdt = np.array([x], *args)
+        dxdt = np.array([x])
 
         return dxdt
 
     def FO_true_solution(t):
         """
-        True solution to the first ODE dxdt = x defined above
+        True solution to the first order ODE dxdt = x defined above
             Parameters:
                 t (ndarray):    t value
 
@@ -264,46 +267,86 @@ def main():
 
         return x
 
-    """
-        Plot the Euler and RK4 method solutions to the First Order ODE, dx/dt = x
-    """
-
     # Solve the ODE using the Euler equation and plot the result
-    FO_euler, FO_euler_time = solve_ode(FO_f, 1, 0, 1, 'euler', 0.01, False)
-    plt.plot(FO_euler_time, FO_euler, label='SO_euler')
+    FO_euler, FO_time = solve_ode(FO_f, 1, 0, 1, 'euler', 0.01, False)
+    plt.plot(FO_time, FO_euler, label='Euler')
 
     # Solve the ODE using the RK4 equation and plot the result
-    FO_RK4, FO_RK4_time = solve_ode(FO_f, 1, 0, 1, 'RK4', 0.01, False)
-    plt.plot(FO_RK4_time, FO_RK4, label='SO_RK4')
+    FO_RK4, FO_time = solve_ode(FO_f, 1, 0, 1, 'RK4', 0.01, False)
+    plt.plot(FO_time, FO_RK4, label='RK4')
 
     # Plot the true solution to the ODE
-    plt.plot(FO_euler_time, FO_true_solution(FO_euler_time), label='SO_true')
+    plt.plot(FO_time, FO_true_solution(FO_time), label='True')
 
     plt.xlabel('t')
     plt.ylabel('x')
     plt.legend()
     plt.show()
 
-    def SO_f(u, t, args):
+    """
+        Plot the solutions to the second order ODE, d2xdt2 = -x
+    """
+
+    def SO_f(u, t):
         """
-        Second Order DE function for d2xdt2 = -x, also expressed as dx/dt = y, dy/dt = -x
+        Second order ODE function for d2xdt2 = -x, also expressed as dx/dt = y, dy/dt = -x
             Parameters:
                 u (list):           initial x values
                 t (int):            initial t value
-                *args (ndarray):    any additional arguments that ODE expects
 
             Returns:
                 Array of dXdt at (x,t)
         """
         x, y = u
         dxdt = y
-        dydt = args[0] * x
+        dydt = -x
 
         dXdt = np.array([dxdt, dydt])
 
         return dXdt
 
+    def SO_true_solution(t):
+        """
+        True solution to the second order ODE d2xdt2 = -x defined above
 
+            Parameters:
+                t (ndarray):  t values
+
+            Returns:
+                Array of solutions
+        """
+        x = np.cos(t) + np.sin(t)
+        y = np.cos(t) - np.sin(t)
+
+        u = [x, y]
+
+        return u
+
+    # Solve the second order ODE using the Euler equation
+    SO_euler, SO_time = solve_ode(SO_f, [1, 1], 0, 10, 'euler', 0.01, True)
+
+    # Solve the second order ODE using the RK4 equation
+    SO_RK4, SO_time = solve_ode(SO_f, [1, 1], 0, 10, 'RK4', 0.01, True)
+
+    # Plot the Euler, RK4 and True solutions to the first initial condition
+    plt.subplot(2, 1, 1)
+    plt.plot(SO_time, SO_euler[:, 0], label='Euler')
+    plt.plot(SO_time, SO_RK4[:, 0], label='RK4')
+    plt.plot(SO_time, SO_true_solution(SO_time)[0], label='True')
+    plt.xlabel('t')
+    plt.ylabel('x')
+    plt.legend()
+
+    # Plot the Euler, RK4 and True solutions to the second initial condition
+    plt.subplot(2, 1, 2)
+    plt.plot(SO_time, SO_euler[:, 1], label='Euler')
+    plt.plot(SO_time, SO_RK4[:, 1], label='RK4')
+    plt.plot(SO_time, SO_true_solution(SO_time)[1], label='True')
+
+    plt.xlabel('t')
+    plt.ylabel('x')
+    plt.legend()
+    plt.show()
 
 
 if __name__ == "__main__":
