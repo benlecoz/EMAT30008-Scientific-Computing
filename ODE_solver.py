@@ -165,11 +165,6 @@ def solve_ode(ODE, x0, t0, t1, method_name, deltat_max, system, *args):
     # tests that the inputted method is a string
     input_test(method_name, 'method', 'string')
 
-    # if there are any arguments passed, tests all the args inputs are the right type
-    if len(args) != 0:
-        for i in range(len(args)):
-            input_test(args[i][0], 'args', 'int_or_float')
-
     """
         Test to see if the inputted method has the right name
     """
