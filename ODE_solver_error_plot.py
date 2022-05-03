@@ -1,12 +1,12 @@
 from ODE_solver import solve_ode
 import numpy as np
 import matplotlib.pyplot as plt
-from math import exp, sin, cos
+from math import exp, sin, cos, pi
 import random
 import time
 
 
-def error(ODE, ODE_sol, u0, num, plot, minmax, timing, *args):
+def error(ODE, ODE_sol, u0, num, plot, minmax, timing, system, *args):
     """
     Plots double logarithmic graph of both the Euler and RK4 errors, for different timesteps.
 
@@ -16,8 +16,9 @@ def error(ODE, ODE_sol, u0, num, plot, minmax, timing, *args):
             u0 (list):          initial conditions x0, t0 and t1
             num (int):          number of timesteps
             plot (bool):        plots the Euler and RK4 errors against the timesteps if True
-            minmax (bool):          visualise overlapping Euler and RK4 errors if True
-            timing (bool):          displays points at timesteps where Euler and RK4 have almost identical errors if True
+            minmax (bool):      visualise overlapping Euler and RK4 errors if True
+            timing (bool):      displays points at timesteps where Euler and RK4 have almost identical errors if True
+            system (bool):      boolean value that is True if the ODE is a system of equations, False if single ODE
             *args (array):      any additional arguments that ODE expects
 
         Returns:
@@ -56,15 +57,19 @@ def error(ODE, ODE_sol, u0, num, plot, minmax, timing, *args):
         RK4_error = np.zeros(num)
 
         # Unpack initial conditions
-        x0, t0, t1 = u0[:-2], u0[-2], u0[-1]
+        if system:
+            x0, t0, t1 = u0[:-2], u0[-2], u0[-1]
+        else:
+            x0, t0, t1 = u0[-3], u0[-2], u0[-1]
+
+        # Find the true solution of the ODE at timestep i
+        true_sol = ODE_sol(t1)
 
         for i in range(num):
-            # Find the true solution of the ODE at timestep i
-            true_sol = ODE_sol(t1)
 
             # Compute the Euler and RK4 values using solve_ode at timestep i
-            euler_sol, euler_time = solve_ode(ODE, x0, t0, t1, 'euler', times[i], *args)
-            RK4_sol, RK4_time = solve_ode(ODE, x0, t0, t1, 'RK4', times[i], *args)
+            euler_sol, euler_time = solve_ode(ODE, x0, t0, t1, 'euler', times[i], system, *args)
+            RK4_sol, RK4_time = solve_ode(ODE, x0, t0, t1, 'RK4', times[i], system, *args)
 
             # Calculate the absolute difference between the true solution and the Euler and RK4 approximations
             euler_error[i] = abs(euler_sol[-1, -1] - true_sol)
@@ -90,7 +95,7 @@ def error(ODE, ODE_sol, u0, num, plot, minmax, timing, *args):
                     Coordinates of arbitrary Euler and RK4 points that have similar error values
             """
 
-            def euler_rk4_equal_error():
+            def euler_RK4_equal_error():
                 """
                 Returns Euler and RK4 coordinates that have similar errors
                 """
@@ -101,7 +106,7 @@ def error(ODE, ODE_sol, u0, num, plot, minmax, timing, *args):
 
                 # choose an arbitrary RK4 error value and find its respective timestep
                 rand_RK4_idx = random.randrange(len(RK4_over_euler_min))
-                RK4_idx = rand_RK4_idx + (len(RK4_error) - len(RK4_over_euler_min))
+                RK4_idx = rand_RK4_idx + len(RK4_error) - len(RK4_over_euler_min)
                 rand_RK4_err = RK4_error[RK4_idx]
                 RK4_time = times[RK4_idx]
 
@@ -114,17 +119,17 @@ def error(ODE, ODE_sol, u0, num, plot, minmax, timing, *args):
 
             x0, t0, t1 = u0[:-2], u0[-2], u0[-1]
 
-            euler_t, euler_err, RK4_t, RK4_err = euler_rk4_equal_error()
+            euler_t, euler_err, RK4_t, RK4_err = euler_RK4_equal_error()
 
             # time how long it takes to run the Euler method with the timestep found previously
             euler_start_time = time.time()
-            solve_ode(ODE, x0, t0, t1, 'euler', euler_t, *args)
+            solve_ode(ODE, x0, t0, t1, 'euler', euler_t, system, *args)
             print('The Euler error value is', euler_err, 'achieved in', time.time() - euler_start_time,
                   'seconds, for timestep', euler_t)
 
             # repeat for the RK4 method
             RK4_start_time = time.time()
-            solve_ode(ODE, x0, t0, t1, 'RK4', RK4_t, *args)
+            solve_ode(ODE, x0, t0, t1, 'RK4', RK4_t, system, *args)
             print('The RK4 error value is', RK4_err, 'achieved in', time.time() - RK4_start_time,
                   'seconds, for timestep',
                   RK4_t)
@@ -186,9 +191,14 @@ def error(ODE, ODE_sol, u0, num, plot, minmax, timing, *args):
 
 
 def main():
+
+    """
+        Plot a double logarithmic scale of the error of Euler and RK4, depending on the timestep
+    """
+
     def FO_f(x, t, *args):
         """
-        Function for first Order Differential Equation dxdt = x
+        Function for first order ODE dxdt = x
             Parameters:
                 x (int):    x value
                 t (int):    t value
@@ -204,7 +214,7 @@ def main():
 
     def FO_true_solution(t):
         """
-        True solution to the first ODE dxdt = x defined above
+        True solution to the first order ODE dxdt = x defined above
             Parameters:
                 t (int):    t value
 
@@ -217,7 +227,7 @@ def main():
 
     def SO_f(u, t, *args):
         """
-        Second Order DE function for d2xdt2 = -x
+        Second order ODE function for d2xdt2 = -x
             Parameters:
                 u (list):   initial x values
                 t (int):    initial t value
@@ -234,7 +244,7 @@ def main():
 
     def SO_true_solution(t):
         """
-        True solution to the second ODE d2xdt2 = -x defined above
+        True solution to the second order ODE d2xdt2 = -x defined above
             Parameters:
                 t (int):    t value
 
@@ -244,12 +254,9 @@ def main():
         x = cos(t) + sin(t)
         y = cos(t) - sin(t)
 
-        u = np.array([x, y])
+        u = [x, y]
 
         return u
-
-    u0 = [1, 0, 1]
-    error(FO_f, FO_true_solution, u0, 100, True, True, True)
 
 
 if __name__ == '__main__':
