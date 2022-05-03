@@ -224,6 +224,10 @@ def main():
         x = exp(t)
 
         return x
+    
+    FO_u0 = [1, 0, 1]
+
+    error(FO_f, FO_true_solution, FO_u0, 100, True, False, False, False)
 
     def SO_f(u, t, *args):
         """
