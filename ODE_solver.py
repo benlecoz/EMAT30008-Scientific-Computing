@@ -103,7 +103,7 @@ def solve_to(ODE, x1, t1, t2, method, deltat_max, *args):
             x1 (ndarray):       initial x value to solve for
             t1 (float):         initial time value
             t2 (float):         final time value
-            method (function):  name of the function to use as the method, either 'euler' or 'rungekutta'
+            method (function):  name of the function to use as the method, either 'euler' or 'RK4'
             deltat_max (float): maximum step size to use
             *args (ndarray):    any additional arguments that ODE expects
 
@@ -131,7 +131,7 @@ def solve_ode(ODE, x0, t0, t1, method_name, deltat_max, system, *args):
             x0 (ndarray):       initial x value to solve for
             t0 (float):         initial time value
             t1 (float):         final time value
-            method_name (str):       name of the method to use, either 'euler' or 'rungekutta'
+            method_name (str):       name of the method to use, either 'euler' or 'RK4'
             deltat_max (float): maximum step size to use
             system (bool):      boolean value that is True if the ODE is a system of equations, False if single ODE
             *args (ndarray):    any additional arguments that ODE expects
@@ -176,11 +176,11 @@ def solve_ode(ODE, x0, t0, t1, method_name, deltat_max, system, *args):
 
     if method_name == 'euler':
         method = euler_step
-    elif method_name == 'rungekutta':
+    elif method_name == 'RK4':
         method = RK4_step
     else:
         raise TypeError(
-            f"The method '{method_name}' is not accepted, please try 'euler' or 'rungekutta'")
+            f"The method '{method_name}' is not accepted, please try 'euler' or 'RK4'")
 
     """
         Start the solve_ode code
@@ -210,22 +210,18 @@ def solve_ode(ODE, x0, t0, t1, method_name, deltat_max, system, *args):
     return X, T
 
 
-def solve_ode_plot(ODE, x0, t0, t1, system, show, *args):
-
-    X, T = solve_ode(ODE, x0, t0, t1, 'rungekutta', 0.01, system, *args)
+def solve_ode_plot(solution, time, system, show, method):
 
     if system:
-        for i in range(len(x0)):
-            plt.plot(T, X[:, i], label=('S' + str(i)))
+        for i in range(len(solution[-1, :])):
+            plt.plot(time, solution[:, i], label=('S' + str(i)))
     else:
-        plt.plot(T, X[:, 0], label='S0')
+        plt.plot(time, solution[:, 0], label=('SO_' + method))
 
     plt.legend()
 
     if show:
         plt.show()
-
-    return X, T
 
 
 def main():
@@ -267,13 +263,13 @@ def main():
 
     # solution1 = solve_ode(FO_f, 1, 0, 1, 'euler', 0.01, False)
 
-    # solution2 = solve_ode(FO_f, 1, 0, 1, 'rungekutta', 0.01, False)
+    # solution2 = solve_ode(FO_f, 1, 0, 1, 'RK4', 0.01, False)
     # print(solution2)
 
-    solution3 = solve_ode(SO_f, [1, 1], 0, 10, 'rungekutta', 0.01, True, np.array([-1]))
-    print(solution3)
-
-    SO_plot(SO_f, [1, 1], 0, 10, np.array([-1]))
+    # solution3 = solve_ode(SO_f, [1, 1], 0, 10, 'RK4', 0.01, True, np.array([-1]))
+    # print(solution3)
+    #
+    # SO_plot(SO_f, [1, 1], 0, 10, np.array([-1]))
 
 
 if __name__ == "__main__":
