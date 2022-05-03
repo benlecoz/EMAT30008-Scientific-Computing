@@ -131,7 +131,7 @@ def solve_ode(ODE, x0, t0, t1, method_name, deltat_max, system, *args):
             x0 (ndarray):       initial x value to solve for
             t0 (float):         initial time value
             t1 (float):         final time value
-            method_name (str):       name of the method to use, either 'euler' or 'RK4'
+            method_name (str):  name of the method to use, either 'euler' or 'RK4'
             deltat_max (float): maximum step size to use
             system (bool):      boolean value that is True if the ODE is a system of equations, False if single ODE
             *args (ndarray):    any additional arguments that ODE expects
@@ -186,42 +186,51 @@ def solve_ode(ODE, x0, t0, t1, method_name, deltat_max, system, *args):
         Start the solve_ode code
     """
 
-    min_number_steps = math.ceil(abs(t1 - t0) / deltat_max)
+    # Calculate the amount of steps necessary to complete the algorithm
+    number_steps = math.ceil(abs(t1 - t0) / deltat_max)
 
     # this ensures that the right number of columns depending on if the ODE is single or system
     if system:
-        X = np.zeros((min_number_steps + 1, len(x0)))
+        X = np.zeros((number_steps + 1, len(x0)))
     else:
-        X = np.zeros((min_number_steps + 1, 1))
+        X = np.zeros((number_steps + 1, 1))
 
-    T = np.zeros(min_number_steps + 1)
+    T = np.zeros(number_steps + 1)
     X[0] = x0
     T[0] = t0
 
-    for i in range(min_number_steps):
+    for i in range(number_steps):
 
+        # Calculate the next time value, with difference deltat_max to the previous one
+        # On the condition that this new time value does not exceed the final time value
         if T[i] + deltat_max < t1:
             T[i + 1] = T[i] + deltat_max
 
+        # Make sure the last time value in the array is the final time value defined at the beginning
         else:
             T[i + 1] = t1
+
+        # Solve the ODE with the previous time value, as well as the one just defined
         X[i + 1] = solve_to(ODE, X[i], T[i], T[i + 1], method, deltat_max, *args)
 
     return X, T
 
 
-def solve_ode_plot(solution, time, system, show, method):
+def SO_ode_plot(solution, time):
+    """
+     Plots all the solution to the ODE, against the time values
 
-    if system:
-        for i in range(len(solution[-1, :])):
-            plt.plot(time, solution[:, i], label=('S' + str(i)))
-    else:
-        plt.plot(time, solution[:, 0], label=('SO_' + method))
+         Parameters:
+            solution (ndarray):    Array of the solutions returned by the solve_ode function
+            time (ndarray):        Array of the time values returned by the solve_ode function
+
+    """
+
+    for i in range(len(solution[-1, :])):
+        plt.plot(time, solution[:, i], label=('S' + str(i)))
 
     plt.legend()
-
-    if show:
-        plt.show()
+    plt.show()
 
 
 def main():
@@ -255,14 +264,21 @@ def main():
 
         return x
 
+    """
+        Plot the Euler and RK4 method solutions to the First Order ODE, dx/dt = x
+    """
+
+    # Solve the ODE using the Euler equation and plot the result
     FO_euler, FO_euler_time = solve_ode(FO_f, 1, 0, 1, 'euler', 0.01, False)
+    plt.plot(FO_euler_time, FO_euler, label='SO_euler')
 
+    # Solve the ODE using the RK4 equation and plot the result
     FO_RK4, FO_RK4_time = solve_ode(FO_f, 1, 0, 1, 'RK4', 0.01, False)
+    plt.plot(FO_RK4_time, FO_RK4, label='SO_RK4')
 
-    solve_ode_plot(FO_euler, FO_euler_time, False, False, 'euler')
-    solve_ode_plot(FO_RK4, FO_RK4_time, False, False, 'RK4')
-
+    # Plot the true solution to the ODE
     plt.plot(FO_euler_time, FO_true_solution(FO_euler_time), label='SO_true')
+
     plt.xlabel('t')
     plt.ylabel('x')
     plt.legend()
@@ -287,15 +303,7 @@ def main():
 
         return dXdt
 
-    # solution1 = solve_ode(FO_f, 1, 0, 1, 'euler', 0.01, False)
 
-    # solution2 = solve_ode(FO_f, 1, 0, 1, 'RK4', 0.01, False)
-    # print(solution2)
-
-    # solution3 = solve_ode(SO_f, [1, 1], 0, 10, 'RK4', 0.01, True, np.array([-1]))
-    # print(solution3)
-    #
-    # SO_plot(SO_f, [1, 1], 0, 10, np.array([-1]))
 
 
 if __name__ == "__main__":
