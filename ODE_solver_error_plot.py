@@ -60,7 +60,7 @@ def error(ODE, ODE_sol, u0, num, plot, minmax, timing, system, *args):
         if system:
             x0, t0, t1 = u0[:-2], u0[-2], u0[-1]
         else:
-            x0, t0, t1 = u0[-3], u0[-2], u0[-1]
+            x0, t0, t1 = u0[0], u0[1], u0[2]
 
         # Find the true solution of the ODE at timestep i
         true_sol = ODE_sol(t1)
@@ -117,22 +117,27 @@ def error(ODE, ODE_sol, u0, num, plot, minmax, timing, system, *args):
 
                 return euler_time, euler_near_rand_RK4, RK4_time, rand_RK4_err
 
-            x0, t0, t1 = u0[:-2], u0[-2], u0[-1]
+            if system:
+                x0, t0, t1 = u0[:-2], u0[-2], u0[-1]
+            else:
+                x0, t0, t1 = u0[0], u0[1], u0[2]
 
             euler_t, euler_err, RK4_t, RK4_err = euler_RK4_equal_error()
+
+            print('Results from Timing the two methods for equivalent error values:\n')
 
             # time how long it takes to run the Euler method with the timestep found previously
             euler_start_time = time.time()
             solve_ode(ODE, x0, t0, t1, 'euler', euler_t, system, *args)
-            print('The Euler error value is', euler_err, 'achieved in', time.time() - euler_start_time,
-                  'seconds, for timestep', euler_t)
+            print('The Euler error value is', euler_err, ', achieved at timestep', euler_t, ', in ', time.time() -
+                  euler_start_time, 'seconds')
 
             # repeat for the RK4 method
             RK4_start_time = time.time()
             solve_ode(ODE, x0, t0, t1, 'RK4', RK4_t, system, *args)
             print('The RK4 error value is', RK4_err, 'achieved in', time.time() - RK4_start_time,
                   'seconds, for timestep',
-                  RK4_t)
+                  RK4_t, '\n')
 
             return [euler_t, euler_err, RK4_t, RK4_err]
 
@@ -170,14 +175,14 @@ def error(ODE, ODE_sol, u0, num, plot, minmax, timing, system, *args):
                 idx = time_difference()
                 ax.scatter(idx[0], idx[1], c='black')
                 ax.scatter(idx[2], idx[3], c='black')
-                ax.legend(('Min Euler error', 'Max RK4 error', 'Euler error', 'RK4 error', 'Equivalent Euler and RK4 errors'))
+                ax.legend(('Euler error', 'RK4 error', 'Min Euler error', 'Max RK4 error', 'Equivalent Euler and RK4 errors'))
 
             else:
-                ax.legend(('Min Euler error', 'Max RK4 error', 'Euler error', 'RK4 error'))
+                ax.legend(('Euler error', 'RK4 error', 'Min Euler error', 'Max RK4 error'))
 
         else:
             ax = general_plot()
-            ax.legend(('Min Euler error', 'Max RK4 error'))
+            ax.legend(('Euler error', 'RK4 error'))
 
         plt.show()
 
@@ -224,7 +229,7 @@ def main():
         x = exp(t)
 
         return x
-    
+
     FO_u0 = [1, 0, 1]
 
     error(FO_f, FO_true_solution, FO_u0, 100, True, False, False, False)
