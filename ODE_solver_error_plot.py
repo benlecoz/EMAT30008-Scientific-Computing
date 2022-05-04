@@ -1,8 +1,9 @@
 from ODE_solver import solve_ode
 import numpy as np
 import matplotlib.pyplot as plt
-from math import exp, sin, cos, pi
+from math import exp, pi
 import random
+import warnings
 import time
 
 
@@ -129,8 +130,8 @@ def error(ODE, ODE_sol, u0, num, plot, minmax, timing, system, *args):
             # time how long it takes to run the Euler method with the timestep found previously
             euler_start_time = time.time()
             solve_ode(ODE, x0, t0, t1, 'euler', euler_t, system, *args)
-            print('The Euler error value is', euler_err, ', achieved at timestep', euler_t, ', in ', time.time() -
-                  euler_start_time, 'seconds')
+            print('The Euler error value is', euler_err, 'achieved in', time.time() -
+                  euler_start_time, 'seconds, for timestep', euler_t)
 
             # repeat for the RK4 method
             RK4_start_time = time.time()
@@ -175,10 +176,10 @@ def error(ODE, ODE_sol, u0, num, plot, minmax, timing, system, *args):
                 idx = time_difference()
                 ax.scatter(idx[0], idx[1], c='black')
                 ax.scatter(idx[2], idx[3], c='black')
-                ax.legend(('Euler error', 'RK4 error', 'Min Euler error', 'Max RK4 error', 'Equivalent Euler and RK4 errors'))
+                ax.legend(('Euler error', 'RK4 error', 'Min overlapping Euler error', 'Max overlapping RK4 error', 'Equivalent Euler and RK4 errors'))
 
             else:
-                ax.legend(('Euler error', 'RK4 error', 'Min Euler error', 'Max RK4 error'))
+                ax.legend(('Euler error', 'RK4 error', 'Min overlapping Euler error', 'Max overlapping RK4 error'))
 
         else:
             ax = general_plot()
@@ -230,17 +231,27 @@ def main():
 
         return x
 
+    # Plot the logarithmic plot of how the error depends on the timestep
     FO_u0 = [1, 0, 1]
-
     error(FO_f, FO_true_solution, FO_u0, 100, True, False, False, False)
 
-    def SO_f(u, t, *args):
+    # Plot logarithmic plot of error against timestep, highlighting timesteps that produce similar Euler and RK4 errors
+    # Print running time of Euler and RK4 algorithms for respective timesteps that return similar errors
+    error(FO_f, FO_true_solution, FO_u0, 100, True, True, True, False)
+
+    """
+    Depending on the error value that the algorithm chooses, the Euler method runs either instantly (0.0 seconds), or 
+    take a fraction of a second to run.
+    On the other hand, the RK4 method always runs instantly (0.0 seconds). This shows that the RK4 method is either 
+    quicker or equal to the Euler method, when the two produce similar error values.
+    """
+
+    def SO_f(u, t):
         """
         Second order ODE function for d2xdt2 = -x
             Parameters:
                 u (list):   initial x values
                 t (int):    initial t value
-                *args:      any additional arguments that ODE expects
 
             Returns:
                 Array of dXdt at (x,t)
@@ -248,24 +259,67 @@ def main():
         x, y = u
         dxdt = y
         dydt = -x
-        dXdt = np.array([dxdt, dydt, *args])
+        dXdt = np.array([dxdt, dydt])
         return dXdt
 
     def SO_true_solution(t):
         """
         True solution to the second order ODE d2xdt2 = -x defined above
             Parameters:
-                t (int):    t value
+                t (ndarray):    t value
 
             Returns:
                 Array of solutions
         """
-        x = cos(t) + sin(t)
-        y = cos(t) - sin(t)
+        x = np.cos(t) + np.sin(t)
+        y = np.cos(t) - np.sin(t)
 
-        u = [x, y]
+        u = np.array([x, y])
 
         return u
+
+    # Suppress warnings
+    warnings.simplefilter("ignore", category=RuntimeWarning)
+
+    """
+        Plotting the numerical solutions over a large range of t
+    """
+
+    # Run the Euler and RK4 method over large range of t and a large timestep
+
+    SO_euler = solve_ode(SO_f, [1, 1], 0, 20, 'euler', 0.5, True)
+    SO_RK4 = solve_ode(SO_f, [1, 1], 0, 100, 'RK4', 1, True)
+
+    # We use slightly different range and timestep values for the two methods, as the respective values evidence the
+    # results better for each respective method
+
+    # Run the true solution code
+    SO_true = SO_true_solution(np.linspace(0, 2 * pi, 100))
+
+    fig, (ax1, ax2) = plt.subplots(1, 2)
+
+    # Show the Euler results and the true solutions, plotting x against dx/dt
+    ax1.plot(SO_true[0], SO_true[1], label = 'True')
+    ax1.plot(SO_euler[0][:, 0], SO_euler[0][:, 1], label='Euler')
+    ax1.set_xlabel('x')
+    ax1.set_ylabel('dx/dt')
+    ax1.legend()
+
+    # Show the RK4 results and the true solutions, plotting x against dx/dt
+    ax2.plot(SO_true[0], SO_true[1], label='True')
+    ax2.plot(SO_RK4[0][:, 0], SO_RK4[0][:, 1], label='RK4')
+    ax2.legend()
+    ax2.set_xlabel('x')
+    ax2.set_ylabel('dx/dt')
+    plt.show()
+
+    """
+    We find that for the Euler and the RK4 method, there are quite significant errors when running the methods with a 
+    large range of t and a high timestep. 
+    In the case of the Euler method, the solutions seem to diverge outward, in an infinitely large spiral.
+    On the other hand, for the RK4 method, the solutions are converging inward 
+    For both methods, the results jump around quite a lot, given the large timestep.  
+    """
 
 
 if __name__ == '__main__':
