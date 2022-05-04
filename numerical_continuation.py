@@ -56,11 +56,56 @@ def nat_param_continuation(ODE, u0, param_range, param_number, solver, discretis
     return sol, param_list
 
 
+def pseudo_arclength_continuation(ODE, u0, pars, max_pars, vary_par, param_number, discretisation, solver, pc):
+
+    param_list = np.linspace(pars[vary_par], max_pars, param_number)
+
+    v0 = solver(discretisation(ODE), u0, (pc, pars))
+
+    pars[vary_par] = param_list[1]
+
+    v1 = solver(discretisation(ODE), np.round(v0, 5), (pc, pars))
+
+    def update_par(pars, vary_par, predicted_p):
+        pars[vary_par] = predicted_p
+
+        return pars
+
+    solution = [v0, v1]
+    par_list = [param_list[0], param_list[1]]
+
+    i = 0
+
+    while i < 40:
+
+        delta_x = solution[-1] - solution[-2]
+        delta_p = par_list[-1] - par_list[-2]
+
+        predicted_x = solution[-1] + delta_x
+        predicted_p = par_list[-1] + delta_p
+
+        predicted_state = np.append(predicted_x, predicted_p)
+
+        pars[vary_par] = predicted_state[-1]
+
+        pseudo_sol = solver(lambda yeah: np.append(discretisation(ODE)(yeah[:-1], pc, update_par(pars, vary_par, yeah[-1])), np.dot(yeah[:-1] - predicted_x, delta_x) + np.dot(yeah[-1] - predicted_p, delta_p)), predicted_state)
+
+        solution.append(pseudo_sol[:-1])
+        par_list.append(pseudo_sol[-1])
+
+        i += 1
+
+    return solution, par_list
+
+
 c_interval = np.array([-2, 2])
 u0 = np.array([1])
 pc = phase_condition
 cubic_sol, cubic_param_list = nat_param_continuation(cubic, u0, c_interval, 10000, fsolve, lambda x: x, pc, False)
 
+sol, par = pseudo_arclength_continuation(cubic, u0, [-2], 2, 0, 50, lambda x: x, fsolve, pc)
+
+plt.plot(par, sol)
 plt.plot(cubic_param_list, cubic_sol)
 plt.show()
 
