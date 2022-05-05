@@ -123,7 +123,7 @@ def input_test(test, test_name, test_type):
 
     def list_or_array():
         if not isinstance(test, (list, np.ndarray)):
-            raise TypeError(f"The argument passed for {test_name} is not a subscriptable object, but a {type(test)}. Please input a subscriptable object")
+            raise TypeError(f"The argument passed for {test_name} is not a list or an array, but a {type(test)}. Please input a list or an array")
 
     if test_type == 'list_or_array':
         list_or_array()
