@@ -5,6 +5,17 @@ from scipy.optimize import fsolve
 
 
 def phase_condition(ODE, u0, *args):
+    """
+    Calculate the phase condition
+
+        Parameters:
+            ODE (function): the ODE whos phase condition we want
+            u0:             list of initial x0 and t values
+            *args:          any additional arguments that ODE expects
+
+        Returns:
+            Return newly calculated x0 and t values, plus phase condition of an ODE
+    """
 
     x0, t = u0[:-1], u0[-1]
     phase_con = ODE(x0, t, *args)[0]
@@ -13,17 +24,43 @@ def phase_condition(ODE, u0, *args):
 
 
 def shooting(ODE):
+    """
+    Sets up the function that needs to be solved in order to return the calculate the root finding
+
+        Parameters:
+            ODE (function): the ODE whos root we want to find
+
+        Returns:
+            The function that return the conditions that need to be solved for
+    """
 
     def conds(u0, pc, *args):
+        """
+            Calculate and set up the conditions that need to solved for
+
+            Parameters:
+                u0:      list of initial x0 and t values
+                pc (function):  phase condition function
+                *args:          any additional arguments that the ODE function defined above expects
+
+            Returns:
+                The conditions needed to find the root of the ODE
+        """
+
+        # set up initial conditions and the phase condition
         x0, t, phase_con = pc(ODE, u0, *args)
 
+        # solve the ODE with the new initial conditions
         sol, sol_time = solve_ode(ODE, x0, 0, t, 'RK4', 0.01, True, *args)
 
         period_con = []
 
+        # add a period condition for each solution found from the solve ODE code
+        # this ensures that the code works for both single and system of ODEs
         for i in range(len(x0)):
             period_con.append(x0[i] - sol[-1, i])
 
+        # append all the period conditions and the phase condition into the same array
         full_conds = np.r_[np.array(period_con), phase_con]
 
         return full_conds
@@ -32,9 +69,23 @@ def shooting(ODE):
 
 
 def shooting_orbit(ODE, u0, pc, system, *args):
+    """
+        Solve and plot the results of the shooting root-finding problem
 
+        Parameters:
+            ODE (function): the ODE whos root we want to find
+            u0:      list of initial x0 and t values
+            pc (function):  phase condition function
+            system (bool):  True if the ODE is a system of equations
+            *args:          any additional arguments that the ODE function defined above expects
+
+    """
+
+    # solve the shooting problem defined in the shooting(ODE) code
     shooting_solution = fsolve(shooting(ODE), u0, (pc, *args), full_output=True)
 
+    # ensure that the solver converges to a solution
+    # if not, the code ends and returns a ValueError
     convergence = shooting_solution[3]
 
     if convergence == 'The solution converged.':
@@ -45,6 +96,7 @@ def shooting_orbit(ODE, u0, pc, system, *args):
 
     sol, sol_time = solve_ode(ODE, x0, 0, t, 'RK4', 0.01, True, *args)
 
+    # if this is system of ODEs, then plot the shooting orbit, else just plot the solutiona against time
     def plot_sol(ax):
 
         for i in range(sol.shape[1]):
@@ -184,7 +236,7 @@ def main():
         dudt = np.array([du1dt, du2dt])
 
         return dudt
-    
+
     hopf_args = [1, -1]
     hopf_u0 = [1.2, 1.2, 8]
     shooting_orbit(Hopf_bif, hopf_u0, pc, True, hopf_args)
