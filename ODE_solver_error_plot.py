@@ -199,7 +199,7 @@ def error(ODE, ODE_sol, u0, num, plot, minmax, timing, system, *args):
 def main():
 
     """
-        Plot a double logarithmic scale of the error of Euler and RK4, depending on the timestep
+    Plot a double logarithmic scale of the error of Euler and RK4, depending on the timestep
     """
 
     def FO_f(x, t, *args):
@@ -282,7 +282,7 @@ def main():
     warnings.simplefilter("ignore", category=RuntimeWarning)
 
     """
-        Plotting the numerical solutions over a large range of t
+    Plotting the numerical solutions over a large range of t
     """
 
     # Run the Euler and RK4 method over large range of t and a large timestep
