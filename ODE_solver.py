@@ -129,34 +129,7 @@ def input_test(test, test_name, test_type):
         list_or_array()
 
 
-def solve_ode(ODE, x0, t0, t1, method_name, deltat_max, system, *args):
-    """
-    Solves the ODE for x1 between t1 and t2 using a specific method, in steps no bigger than delta_tmax
-
-        Parameters:
-            ODE (function):     the ODE function that we want to solve
-            x0:                 initial x value to solve for
-            t0 (float):         initial time value
-            t1 (float):         final time value
-            method_name (str):  name of the method to use, either 'euler' or 'RK4'
-            deltat_max (float): maximum step size to use
-            system (bool):      boolean value that is True if the ODE is a system of equations, False if single ODE
-            *args (ndarray):    any additional arguments that ODE expects
-
-        Returns:
-            Solution to the ODE found at t2, using method and with step size no bigger than delta_tmax
-    """
-
-    """
-    Test all the inputs of the solve_ode function are the right type
-    """
-
-    # tests that the inputted ODE to solve is a function
-    input_test(ODE, 'ODE', 'function')
-
-    # tests that the inputted system parameter is a boolean
-    input_test(system, 'system', 'boolean')
-
+def test_init_conds(x0, system):
     # test inputs for the initial x conditions if ODE is a system
     if system:
         # test to make sure x0 is either a list or a numpy array
@@ -193,10 +166,43 @@ def solve_ode(ODE, x0, t0, t1, method_name, deltat_max, system, *args):
         else:
             input_test(x0, 'x0', 'int_or_float')
 
+
+def solve_ode(ODE, x0, t0, t1, method_name, deltat_max, system, *args):
+    """
+    Solves the ODE for x1 between t1 and t2 using a specific method, in steps no bigger than delta_tmax
+
+        Parameters:
+            ODE (function):     the ODE function that we want to solve
+            x0:                 initial x value to solve for
+            t0 (float):         initial time value
+            t1 (float):         final time value
+            method_name (str):  name of the method to use, either 'euler' or 'RK4'
+            deltat_max (float): maximum step size to use
+            system (bool):      boolean value that is True if the ODE is a system of equations, False if single ODE
+            *args (ndarray):    any additional arguments that ODE expects
+
+        Returns:
+            Solution to the ODE found at t2, using method and with step size no bigger than delta_tmax
+    """
+
+    """
+    Test all the inputs of the solve_ode function are the right type
+    """
+
+    # tests that the inputted ODE to solve is a function
+    input_test(ODE, 'ODE', 'function')
+
+    # tests that the inputted system parameter is a boolean
+    input_test(system, 'system', 'boolean')
+
     # tests inputs for the time values and the maximum timestep
     input_test(t0, 't0', 'int_or_float')
     input_test(t1, 't1', 'int_or_float')
     input_test(deltat_max, 'deltat_max', 'int_or_float')
+
+    # test inputs for the initial conditions
+    # code for this is quite long and will be repeated in other files so define these tests in a separate function
+    test_init_conds(x0, system)
 
     # tests that the inputted method is a string
     input_test(method_name, 'method', 'string')
