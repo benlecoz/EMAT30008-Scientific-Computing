@@ -33,7 +33,7 @@ def u_exact(x, t):
     return y
 
 
-def matrix_form(method):
+def matrix_form(method, lmbda, mx):
 
     if method == 'Forward_Euler':
         diag = [[lmbda] * (mx - 1), [1 - 2 * lmbda] * mx, [lmbda] * (mx - 1)]
@@ -42,45 +42,65 @@ def matrix_form(method):
         return FE_matrix
 
 
-# Set numerical parameters
-mx = 30  # number of gridpoints in space
-mt = 1000  # number of gridpoints in time
+def numerical_initialisation():
+    # Set numerical parameters
+    mx = 30  # number of gridpoints in space
+    mt = 1000  # number of gridpoints in time
 
-# Set up the numerical environment variables
-x = np.linspace(0, L, mx + 1)  # mesh points in space
-t = np.linspace(0, T, mt + 1)  # mesh points in time
-deltax = x[1] - x[0]  # gridspacing in x
-deltat = t[1] - t[0]  # gridspacing in t
-lmbda = kappa * deltat / (deltax ** 2)  # mesh fourier number
-print("deltax=", deltax)
-print("deltat=", deltat)
-print("lambda=", lmbda)
+    # Set up the numerical environment variables
+    x = np.linspace(0, L, mx + 1)  # mesh points in space
+    t = np.linspace(0, T, mt + 1)  # mesh points in time
+    deltax = x[1] - x[0]  # gridspacing in x
+    deltat = t[1] - t[0]  # gridspacing in t
+    lmbda = kappa * deltat / (deltax ** 2)  # mesh fourier number
+    print("deltax=", deltax)
+    print("deltat=", deltat)
+    print("lambda=", lmbda)
 
-# Set up the solution variables
-u_j = np.zeros(x.size)  # u at current time step
-u_jp1 = np.zeros(x.size)  # u at next time step
+    # Set up the solution variables
+    u_j = np.zeros(x.size)  # u at current time step
+    u_jp1 = np.zeros(x.size)  # u at next time step
 
-# Set initial condition
-for i in range(0, mx + 1):
-    u_j[i] = u_I(x[i])
-    # u_j[i] = new_u_I(x[i], 1/2)
+    # Set initial condition
+    for i in range(0, mx + 1):
+        u_j[i] = u_I(x[i])
+        # u_j[i] = new_u_I(x[i], 1/2)
 
-# Solve the PDE: loop over all time points
-for j in range(0, mt):
-    # Forward Euler timestep at inner mesh points
-    # PDE discretised at position x[i], time t[j]
+    return x, mx, mt, lmbda, u_j, u_jp1
 
-    u_jp1[1:] = matrix_form('Forward_Euler').dot(u_j[1:])
 
-    # Boundary conditions
-    u_jp1[0] = 0
-    u_jp1[mx] = 0
+def Forward_Euler():
 
-    # Save u_j at time t[j+1]
-    u_j[:] = u_jp1[:]
+    x, mx, mt, lmbda, u_j, u_jp1 = numerical_initialisation()
+
+    # Solve the PDE: loop over all time points
+    for j in range(0, mt):
+        # Forward Euler timestep at inner mesh points
+        # PDE discretised at position x[i], time t[j]
+
+        u_jp1[1:] = matrix_form('Forward_Euler', lmbda, mx).dot(u_j[1:])
+
+        # Boundary conditions
+        u_jp1[0] = 0
+        u_jp1[mx] = 0
+
+        # Save u_j at time t[j+1]
+        u_j[:] = u_jp1[:]
+
+    return x, u_jp1
+
+
+def Backwards_Euler():
+
+    x, mx, mt, lmbda = numerical_initialisation()
+
+
+
 
 # Plot the final result and exact solution
-pl.plot(x, u_j, 'ro', label='num')
+FE_x, FE_u_jp1 = Forward_Euler()
+
+pl.plot(FE_x, FE_u_jp1, 'ro', label='num')
 xx = np.linspace(0, L, 250)
 pl.plot(xx, u_exact(xx, T), 'b-', label='exact')
 pl.xlabel('x')
