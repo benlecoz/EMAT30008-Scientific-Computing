@@ -1,26 +1,11 @@
+import time
+
 from scipy.optimize import fsolve
 import matplotlib.pyplot as plt
 import numpy as np
 import math
 from numerical_shooting import shooting, phase_condition
 import warnings
-
-
-def cubic(x, t, args):
-    c = args
-    eq = x ** 3 - x + c
-    return eq
-
-
-def Hopf_bif(U, t, args):
-    beta = args
-    u1, u2 = U
-
-    du1dt = beta * u1 - u2 - u1 * (u1 ** 2 + u2 ** 2)
-    du2dt = u1 + beta * u2 - u2 * (u1 ** 2 + u2 ** 2)
-    dudt = np.array([du1dt, du2dt])
-
-    return dudt
 
 
 def mod_Hopf_bif(U, t, args):
@@ -35,6 +20,9 @@ def mod_Hopf_bif(U, t, args):
 
 
 def nat_param_continuation(ODE, u0, param_range, param_number, solver, discretisation, pc, system):
+
+    print(f'Running the natural parameter continuation for the {ODE.__name__} function.')
+    start_time = time.time()
     warnings.filterwarnings('ignore')
 
     if system:
@@ -53,10 +41,16 @@ def nat_param_continuation(ODE, u0, param_range, param_number, solver, discretis
     for i in range(param_number - 1):
         sol[i + 1] = solver(discretisation(ODE), np.round(sol[i], 5), (pc, param_list[i + 1]))
 
+    print(f"Completed in {time.time() - start_time} seconds.\n")
+
     return sol, param_list
 
 
 def pseudo_arclength_continuation(ODE, u0, pars, max_pars, vary_par, param_number, discretisation, solver, pc, system):
+
+    print(f'Running the pseudo arc length continuation for the {ODE.__name__} function.')
+
+    start_time = time.time()
 
     warnings.filterwarnings('ignore')
 
@@ -79,12 +73,10 @@ def pseudo_arclength_continuation(ODE, u0, pars, max_pars, vary_par, param_numbe
         par_list = [param_list[0], param_list[1]]
 
     v1 = solver(discretisation(ODE), np.round(v0, 2), (pc, pars_ind(pars, vary_par)))
-    print('v1', v1)
 
     def update_par(pars, vary_par, predicted_p):
 
         pars[vary_par] = predicted_p
-        # print('pred', pars[vary_par])
 
         return pars_ind(pars, vary_par)
 
@@ -92,7 +84,7 @@ def pseudo_arclength_continuation(ODE, u0, pars, max_pars, vary_par, param_numbe
 
     i = 0
 
-    while i < 40:
+    while i < 50:
 
         delta_x = solution[-1] - solution[-2]
         delta_p = par_list[-1] - par_list[-2]
@@ -100,64 +92,140 @@ def pseudo_arclength_continuation(ODE, u0, pars, max_pars, vary_par, param_numbe
         predicted_x = solution[-1] + delta_x
         predicted_p = par_list[-1] + delta_p
 
-        # print('pred_x', predicted_x, 'pred_p', predicted_p)
-
         predicted_state = np.append(predicted_x, predicted_p)
-        # print('full', predicted_state)
 
         pars[vary_par] = predicted_state[-1]
 
         pseudo_sol = solver(lambda state: np.append(discretisation(ODE)(state[:-1], pc, update_par(pars, vary_par, state[-1])), np.dot(state[:-1] - predicted_x, delta_x) + np.dot(state[-1] - predicted_p, delta_p)), predicted_state)
 
-        # print(pseudo_sol[:-1])
-        solution.append(pseudo_sol[:-1])
+        solution.append(np.round(pseudo_sol[:-1], 3))
         par_list.append(pseudo_sol[-1])
 
         i += 1
 
-    return solution, par_list
+    if system:
+
+        sol_list = []
+        for i in range(len(solution)):
+            sol_list.append(solution[i][0])
+
+        print(f"Completed in {time.time() - start_time} seconds.\n")
+        return sol_list, par_list
+
+    else:
+        print(f"Completed in {time.time() - start_time} seconds.\n")
+        return solution, par_list
 
 
-# c_interval = np.array([-2, 2])
-# u0 = np.array([1])
-# pc = phase_condition
-# cubic_sol, cubic_param_list = nat_param_continuation(cubic, u0, c_interval, 10000, fsolve, lambda x: x, pc, False)
-#
-# sol, par = pseudo_arclength_continuation(cubic, u0, [-2], 2, 0, 50, lambda x: x, fsolve, pc, False)
-#
-# plt.plot(cubic_param_list, cubic_sol, label = 'Natural Parameter')
-# plt.plot(par, sol, label = 'Pseudo Arc Length')
-# plt.legend()
-# plt.show()
+def main():
 
-beta_interval = np.array([-1, 2])
-u0 = np.array([1.2, 1.2, 6.4])
+    def cubic(x, t, args):
+        """
+        Function for cubic equation
+            Parameters:
+                x:      initial condition
+                t:      t value
+                args:   any additional arguments that ODE expects
 
-hopf_sol, hopf_param_list = nat_param_continuation(Hopf_bif, u0, beta_interval, 50, fsolve, shooting, phase_condition, True)
-pseudo_hopf_sol, pseudo_hopf_param = pseudo_arclength_continuation(Hopf_bif, u0, [-1], 2, 0, 50, shooting, fsolve, phase_condition, True)
+            Returns:
+                The cubic equation
+        """
+        c = args
+        eq = x ** 3 - x + c
+        return eq
 
-sol_sol = []
-for i in range(len(pseudo_hopf_sol)):
-    sol_sol.append(pseudo_hopf_sol[i][0])
-print(sol_sol)
+    """
+    We start by calculating the natural parameter and pseudo arclength continuation for the cubic function above.
+    """
 
-plt.plot(hopf_param_list, hopf_sol[:, 0])
-plt.plot(pseudo_hopf_param, sol_sol)
+    # We define the following conditions to run for both methods
+    c_interval = np.array([-2, 2])
+    u0 = np.array([1])
+    pc = phase_condition
 
-plt.show()
+    # Running both the natural parameter and the pseudo arclength continuation code
+    cubic_sol, cubic_param_list = nat_param_continuation(cubic, u0, c_interval, 10000, fsolve, lambda x: x, pc, False)
+    sol, par = pseudo_arclength_continuation(cubic, u0, [-2], 2, 0, 50, lambda x: x, fsolve, pc, False)
 
-# beta_interval = np.array([-1, 2])
-# u0 = np.array([1, 1, 6])
-# mod_hopf_sol, mod_hopf_param_list = nat_param_continuation(mod_Hopf_bif, u0, beta_interval, 50, fsolve, shooting, phase_condition, True)
-# pseudo_mod_hopf_sol, pseudo_mod_hopf_param = pseudo_arclength_continuation(mod_Hopf_bif, u0, [-1], 2, 0, 50, shooting, fsolve, phase_condition, True)
-#
-# print(pseudo_mod_hopf_sol)
+    plt.plot(cubic_param_list, cubic_sol, label = 'Natural Parameter')
+    plt.plot(par, sol, label = 'Pseudo Arc Length')
+    plt.xlabel('c')
+    plt.ylabel('x')
+    plt.legend()
+    plt.show()
 
-# sol_sol = []
-# for i in range(len(pseudo_mod_hopf_sol)):
-#     sol_sol.append(pseudo_mod_hopf_sol[i][0])
-# print(sol_sol)
+    """
+    The plot shows us that at approximately c = 0.38 there is a fold, which the natural parameter continuation cannot 
+    overcome, yet the pseudo arc length code can, evidenced by how the curve folds 
+    """
 
-# plt.plot(mod_hopf_param_list, mod_hopf_sol[:, 0])
-# plt.plot(pseudo_mod_hopf_param, sol_sol)
-# plt.show()
+    """
+    Next, we solve the Hopf bifurcation function with both continuation methods 
+    """
+
+    def Hopf_bif(U, t, args):
+        """
+        Function for Hopf bifurcation normal form equation
+            Parameters:
+                U:      initial conditions
+                t:      t value
+                args:   any additional arguments that ODE expects
+
+            Returns:
+                An array of the du1/dt and du2/dt
+        """
+        beta = args
+        u1, u2 = U
+
+        du1dt = beta * u1 - u2 - u1 * (u1 ** 2 + u2 ** 2)
+        du2dt = u1 + beta * u2 - u2 * (u1 ** 2 + u2 ** 2)
+        dudt = np.array([du1dt, du2dt])
+
+        return dudt
+
+    # We define the following conditions
+    beta_interval = np.array([-1, 2])
+    u0 = np.array([1.2, 1.2, 6.4])
+    pc = phase_condition
+
+    hopf_sol, hopf_param_list = nat_param_continuation(Hopf_bif, u0, beta_interval, 50, fsolve, shooting, pc, True)
+    pseudo_hopf_sol, pseudo_hopf_param = pseudo_arclength_continuation(Hopf_bif, u0, [-1], 2, 0, 50, shooting, fsolve, pc, True)
+
+    plt.plot(hopf_param_list, hopf_sol[:, 0], label='Natural Parameter')
+    plt.plot(pseudo_hopf_param, pseudo_hopf_sol, label='Pseudo Arc Length')
+    plt.xlabel('c')
+    plt.ylabel('x')
+    plt.legend()
+    plt.show()
+
+    """
+    The plot shows us that at c = 0 there is a fold, which the natural parameter continuation cannot 
+    overcome, yet the pseudo arc length code can, evidenced by how the curve folds 
+    """
+
+    """
+    Next, we repeat the same process for the modified Hopf bifurcation equations
+    """
+
+    beta_interval = np.array([-1, 2])
+    u0 = np.array([1.4, 0, 6.3])
+    pc = phase_condition
+
+    mod_hopf_sol, mod_hopf_param_list = nat_param_continuation(mod_Hopf_bif, u0, beta_interval, 50, fsolve, shooting, pc, True)
+    pseudo_mod_hopf_sol, pseudo_mod_hopf_param = pseudo_arclength_continuation(mod_Hopf_bif, u0, [-1], 2, 0, 50, shooting, fsolve, pc, True)
+
+    plt.plot(mod_hopf_param_list, mod_hopf_sol[:, 0], label='Natural Parameter')
+    plt.plot(pseudo_mod_hopf_param, pseudo_mod_hopf_sol, label='Pseudo Arc Length')
+    plt.xlabel('c')
+    plt.ylabel('x')
+    plt.legend()
+    plt.show()
+
+    """
+    The plot shows us that at c = 0 there is a fold, which the natural parameter continuation cannot 
+    overcome, yet the pseudo arc length code can, evidenced by how the curve folds 
+    """
+
+
+if __name__ == '__main__':
+    main()
