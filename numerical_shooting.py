@@ -1,6 +1,8 @@
+from math import sqrt, cos, sin
+
 import matplotlib.pyplot as plt
 import numpy as np
-from ODE_solver import solve_ode, input_test
+from ODE_solver import solve_ode, input_test, test_init_conds
 from scipy.optimize import fsolve
 
 
@@ -36,7 +38,7 @@ def shooting(ODE):
 
     def conds(u0, pc, *args):
         """
-            Calculate and set up the conditions that need to solved for
+        Calculate and set up the conditions that need to solved for
 
             Parameters:
                 u0:      list of initial x0 and t values
@@ -70,7 +72,7 @@ def shooting(ODE):
 
 def shooting_orbit(ODE, u0, pc, system, *args):
     """
-        Solve and plot the results of the shooting root-finding problem
+    Solve and plot the results of the shooting root-finding problem
 
         Parameters:
             ODE (function): the ODE whos root we want to find
@@ -88,12 +90,11 @@ def shooting_orbit(ODE, u0, pc, system, *args):
     # tests that the inputted ODE is a function
     input_test(ODE, 'ODE', 'function')
 
-    # tests that the inputted system parameter is a boolean
+    # tests that the inputted system parameter is boolean
     input_test(system, 'system', 'boolean')
 
-    # test inputs for all the initial u0 conditions
-    for u in u0:
-        input_test(u, 'u0', 'int_or_float')
+    # test inputs for the initial u0 conditions
+    test_init_conds(u0, system)
 
     # tests that the inputted phase condition is a function
     input_test(pc, 'phase condition', 'function')
@@ -111,7 +112,7 @@ def shooting_orbit(ODE, u0, pc, system, *args):
     convergence = shooting_solution[3]
 
     if convergence == 'The solution converged.':
-        print(convergence + f' The ODE ran was {ODE.__name__}.\n')
+        print(f'The solution converged for {ODE.__name__}.\n')
         x0, t = shooting_solution[0][:-1], shooting_solution[0][-1]
     else:
         raise ValueError("The shooting algorithm could not converge to a solution, please try again with different values.")
