@@ -141,7 +141,7 @@ def solve_ode(ODE, x0, t0, t1, method_name, deltat_max, system, *args):
     """
 
     """
-        Test all the inputs of the solve_ode function are the right type
+    Test all the inputs of the solve_ode function are the right type
     """
 
     # tests that the inputted ODE to solve is a function
@@ -166,7 +166,7 @@ def solve_ode(ODE, x0, t0, t1, method_name, deltat_max, system, *args):
     input_test(method_name, 'method', 'string')
 
     """
-        Test to see if the inputted method has the right name
+    Test to see if the inputted method has the right name
     """
 
     if method_name == 'euler':
@@ -178,7 +178,7 @@ def solve_ode(ODE, x0, t0, t1, method_name, deltat_max, system, *args):
             f"The method '{method_name}' is not accepted, please try 'euler' or 'RK4'")
 
     """
-        Start the solve_ode code
+    Start the solve_ode code
     """
 
     # Calculate the amount of steps necessary to complete the algorithm
@@ -279,7 +279,7 @@ def main():
     plt.show()
 
     """
-        Plot the solutions to the second order ODE, d2xdt2 = -x
+    Plot the solutions to the second order ODE, d2xdt2 = -x
     """
 
     def SO_f(u, t):
