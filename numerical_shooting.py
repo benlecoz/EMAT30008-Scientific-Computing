@@ -73,7 +73,7 @@ def shooting(ODE):
     return conds
 
 
-def shooting_orbit(ODE, u0, pc, *args):
+def shooting_orbit(ODE, u0, pc, system, *args):
 
     shooting_solution = fsolve(shooting(ODE), u0, (pc, *args), full_output=True)
 
@@ -87,7 +87,16 @@ def shooting_orbit(ODE, u0, pc, *args):
 
     sol, sol_time = solve_ode(ODE, x0, 0, t, 'RK4', 0.01, True, *args)
 
-    plt.plot(sol[:, 0], sol[:, 1])
+    for i in range(sol.shape[1]):
+        plt.plot(sol_time, sol[:, i], label = 'S' + str(i))
+        plt.xlabel('x')
+        plt.ylabel('y')
+        plt.legend()
+
+    if system:
+        plt.figure()
+        plt.plot(sol[:, 0], sol[:, 1])
+
     plt.show()
 
 
@@ -147,7 +156,7 @@ def main():
     pc = phase_condition
     u0 = np.array([1.2, 1.2, 6])
 
-    shooting_orbit(predator_prey, u0, pc, args)
+    shooting_orbit(predator_prey, u0, pc, True, args)
 
     # hopf_args = [1, -1]
     # u0 = [1.2, 1.2, 8]
