@@ -5,7 +5,7 @@ import numpy as np
 
 def euler_step(ODE, x0, t0, h, *args):
     """
-    Performs a single step of the Euler, at (x0, t0) for step size h.
+    Performs a single step of the Euler method, at (x0, t0) for step size h.
 
         Parameters:
             ODE (function):     the ODE function that we want to solve
@@ -52,6 +52,34 @@ def RK4_step(ODE, x0, t0, h, *args):
     return x1, t1
 
 
+def solve_to(ODE, x1, t1, t2, method, deltat_max, *args):
+    """
+    Solves the ODE for x1 between t1 and t2 using a specific method, in steps no bigger than delta_tmax
+
+        Parameters:
+            ODE (function):     the ODE function that we want to solve
+            x1 (ndarray):       initial x value to solve for
+            t1 (float):         initial time value
+            t2 (float):         final time value
+            method (function):  name of the function to use as the method, either 'euler' or 'RK4'
+            deltat_max (float): maximum step size to use
+            *args (ndarray):    any additional arguments that ODE expects
+
+        Returns:
+            Solution to the ODE found at t2, using method and with step size no bigger than delta_tmax
+    """
+
+    min_number_steps = math.floor((t2 - t1) / deltat_max)
+
+    for i in range(min_number_steps):
+        x1, t1 = method(ODE, x1, t1, deltat_max, *args)
+
+    if t1 != t2:
+        x1, t1 = method(ODE, x1, t1, t2 - t1, *args)
+
+    return x1
+
+
 def input_test(test, test_name, test_type):
     """
     Tests the type of specific parameters
@@ -92,34 +120,6 @@ def input_test(test, test_name, test_type):
 
     if test_type == 'boolean':
         boolean()
-
-
-def solve_to(ODE, x1, t1, t2, method, deltat_max, *args):
-    """
-    Solves the ODE for x1 between t1 and t2 using a specific method, in steps no bigger than delta_tmax
-
-        Parameters:
-            ODE (function):     the ODE function that we want to solve
-            x1 (ndarray):       initial x value to solve for
-            t1 (float):         initial time value
-            t2 (float):         final time value
-            method (function):  name of the function to use as the method, either 'euler' or 'RK4'
-            deltat_max (float): maximum step size to use
-            *args (ndarray):    any additional arguments that ODE expects
-
-        Returns:
-            Solution to the ODE found at t2, using method and with step size no bigger than delta_tmax
-    """
-
-    min_number_steps = math.floor((t2 - t1) / deltat_max)
-
-    for i in range(min_number_steps):
-        x1, t1 = method(ODE, x1, t1, deltat_max, *args)
-
-    if t1 != t2:
-        x1, t1 = method(ODE, x1, t1, t2 - t1, *args)
-
-    return x1
 
 
 def solve_ode(ODE, x0, t0, t1, method_name, deltat_max, system, *args):
