@@ -74,11 +74,33 @@ def shooting_orbit(ODE, u0, pc, system, *args):
 
         Parameters:
             ODE (function): the ODE whos root we want to find
-            u0:      list of initial x0 and t values
+            u0:             list of initial x0 and t values
             pc (function):  phase condition function
             system (bool):  True if the ODE is a system of equations
             *args:          any additional arguments that the ODE function defined above expects
 
+    """
+
+    """
+    Test all the inputs of the shooting_orbit function are the right type
+    """
+
+    # tests that the inputted ODE is a function
+    input_test(ODE, 'ODE', 'function')
+
+    # tests that the inputted system parameter is a boolean
+    input_test(system, 'system', 'boolean')
+
+    # test inputs for all the initial u0 conditions
+    for u in u0:
+        input_test(u, 'u0', 'int_or_float')
+
+    # tests that the inputted phase condition is a function
+    input_test(pc, 'phase condition', 'function')
+
+    """
+    Now that all the inputs have been successfully tested and we confirm that they all have the right type, we can start
+    running the shooting code
     """
 
     # solve the shooting problem defined in the shooting(ODE) code
