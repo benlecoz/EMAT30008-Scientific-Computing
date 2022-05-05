@@ -1,21 +1,8 @@
 import matplotlib.pyplot as plt
 import numpy as np
-from ODE_solver import solve_ode, SO_plot
+from ODE_solver import solve_ode, SO_ode_plot
 from scipy.optimize import fsolve
 from math import sqrt, cos, sin
-
-
-def predator_prey(X, t, args):
-
-    x, y = X
-    a, b, d = args[0], args[1], args[2]
-
-    dxdt = x * (1 - x) - (a * x * y) / (d + x)
-    dydt = b * y * (1 - y / x)
-
-    dXdt = np.array([dxdt, dydt])
-
-    return dXdt
 
 
 def Hopf_bif(U, t, args):
@@ -72,7 +59,7 @@ def shooting(ODE):
     def conds(u0, pc, *args):
         x0, t, phase_con = pc(ODE, u0, *args)
 
-        sol, sol_time = solve_ode(ODE, x0, 0, t, 'rungekutta', 0.01, True, *args)
+        sol, sol_time = solve_ode(ODE, x0, 0, t, 'RK4', 0.01, True, *args)
 
         period_con = []
 
@@ -86,52 +73,88 @@ def shooting(ODE):
     return conds
 
 
-def shooting_cycle(ODE, ODE_sol, solution, error, *args):
+def shooting_orbit(ODE, u0, pc, *args):
 
-    x0, t = solution[:-1], solution[-1]
+    shooting_solution = fsolve(shooting(ODE), u0, (pc, *args), full_output=True)
 
-    X, T = SO_plot(ODE, x0, 0, t, *args)
+    convergence = shooting_solution[3]
 
-    if error == 'yes':
+    if convergence == 'The solution converged.':
+        print(convergence + '\n')
+        x0, t = shooting_solution[0][:-1], shooting_solution[0][-1]
+    else:
+        raise ValueError(f"The shooting algorithm could not converge to a solution, please try again with different values.")
 
-        u1, u2 = ODE_sol(T, *args)
-
-        error1 = np.zeros(len(T))
-        error2 = np.zeros(len(T))
-
-        for i in range(len(T)):
-            error1[i] = abs(u1[i] - X[i, 0])
-            error2[i] = abs(u2[i] - X[i, 1])
-
-        plt.plot(T, error1, label = 'S1 error')
-        plt.plot(T, error2, label = 'S2 error')
-        plt.legend()
-        plt.show()
-
-
-def shooting_orbit(ODE, solution, *args):
-
-    x0, t = solution[:-1], solution[-1]
-    print(t)
-    sol, sol_time = solve_ode(ODE, x0, 0, t, 'RK4', 0.01, *args)
+    sol, sol_time = solve_ode(ODE, x0, 0, t, 'RK4', 0.01, True, *args)
 
     plt.plot(sol[:, 0], sol[:, 1])
     plt.show()
 
 
 def main():
-    # args = [1, 0.16, 0.1]
-    # shooting_solution = shooting(predator_prey, [0.2, 0.2, 21], args)
-    #
-    # shooting_cycle(predator_prey, shooting_solution, args)
-    # shooting_orbit(predator_prey, shooting_solution, args)
 
-    hopf_args = [1, -1]
-    u0 = [1.2, 1.2, 8]
+    def predator_prey(X, t, args):
+        """
+        Function for predator-prey equation
+            Parameters:
+                X:      initial conditions
+                t:      t value
+                args:   any additional arguments that ODE expects
+
+            Returns:
+                Array of dxdt, dydt
+        """
+        x, y = X
+        a, b, d = args[0], args[1], args[2]
+
+        dxdt = x * (1 - x) - (a * x * y) / (d + x)
+        dydt = b * y * (1 - y / x)
+
+        dXdt = np.array([dxdt, dydt])
+
+        return dXdt
+
+    """
+        We simulate the predator-prey equations for a = 1, d = 0.1, and choosing two b values on either side of 0.26
+    """
+
+    b1 = np.round(np.random.uniform(0.1, 0.25), 2)
+    b2 = np.round(np.random.uniform(0.27, 0.5), 2)
+
+    pred_prey_sol1, pred_prey_time1 = solve_ode(predator_prey, [0.2, 0.2], 0, 120, 'RK4', 0.01, True, [1, b1, 0.1])
+    pred_prey_sol2, pred_prey_time2 = solve_ode(predator_prey, [0.2, 0.2], 0, 120, 'RK4', 0.01, True, [1, b2, 0.1])
+
+    fig, (ax1, ax2) = plt.subplots(1, 2)
+
+    ax1.plot(pred_prey_time1, pred_prey_sol1, label = 'Predator Prey equation with b = ' + str(b1))
+    ax1.legend()
+    ax1.set_xlabel('x')
+    ax1.set_ylabel('y')
+
+    ax2.plot(pred_prey_time2, pred_prey_sol2, label = 'Predator Prey equation with b = ' + str(b2))
+    ax2.legend()
+    ax2.set_xlabel('x')
+    ax2.set_ylabel('y')
+
+    plt.show()
+
+    """
+    Plotting this long term, we see that when b < 0.26, the predator prey solutions start 
+    oscillating periodically, whereas when b > 0.26, the solutions converge.
+    """
+
+    args = [1, 0.16, 0.1]
     pc = phase_condition
+    u0 = np.array([1.2, 1.2, 6])
 
-    real_sol = fsolve(shooting(Hopf_bif), u0, (pc, hopf_args), full_output=True)
-    print(real_sol[0])
+    shooting_orbit(predator_prey, u0, pc, args)
+
+    # hopf_args = [1, -1]
+    # u0 = [1.2, 1.2, 8]
+    # pc = phase_condition
+    #
+    # real_sol = fsolve(shooting(Hopf_bif), u0, (pc, hopf_args), full_output=True)
+    # print(real_sol[0])
 
     # shooting_cycle(Hopf_bif, Hopf_bif_true_sol, shooting_solution, 'yes', args)
     # shooting_orbit(Hopf_bif, shooting_solution, args)
