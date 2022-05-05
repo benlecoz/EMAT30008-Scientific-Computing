@@ -1,49 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
-from ODE_solver import solve_ode, SO_ode_plot
+from ODE_solver import solve_ode, input_test
 from scipy.optimize import fsolve
-from math import sqrt, cos, sin
-
-
-def Hopf_bif(U, t, args):
-
-    beta = args[0]
-    sigma = args[1]
-
-    u1, u2 = U
-    du1dt = beta * u1 - u2 + sigma * u1 * (u1 ** 2 + u2 ** 2)
-    du2dt = u1 + beta * u2 + sigma * u2 * (u1 ** 2 + u2 ** 2)
-    dudt = np.array([du1dt, du2dt])
-
-    return dudt
-
-
-def Hopf_bif_true_sol(t, args):
-
-    beta = args[0]
-    phase_con = 0
-    u1 = np.zeros(len(t))
-    u2 = np.zeros(len(t))
-
-    for i in range(len(t)):
-        u1[i] = sqrt(beta) * cos(t[i] + phase_con)
-        u2[i] = sqrt(beta) * sin(t[i] + phase_con)
-
-    return u1, u2
-
-
-def Hopf_ext(U, t, args):
-
-    beta = args[0]
-    sigma = args[1]
-
-    u1, u2, u3 = U
-    du1dt = beta * u1 - u2 + sigma * u1 * (u1 ** 2 + u2 ** 2)
-    du2dt = u1 + beta * u2 + sigma * u2 * (u1 ** 2 + u2 ** 2)
-    du3dt = - u3
-    dudt = np.array([du1dt, du2dt, du3dt])
-
-    return dudt
 
 
 def phase_condition(ODE, u0, *args):
@@ -123,6 +81,29 @@ def main():
 
         return dXdt
 
+    def Hopf_bif(U, t, args):
+        beta = args[0]
+        sigma = args[1]
+
+        u1, u2 = U
+        du1dt = beta * u1 - u2 + sigma * u1 * (u1 ** 2 + u2 ** 2)
+        du2dt = u1 + beta * u2 + sigma * u2 * (u1 ** 2 + u2 ** 2)
+        dudt = np.array([du1dt, du2dt])
+
+        return dudt
+
+    def Hopf_ext(U, t, args):
+        beta = args[0]
+        sigma = args[1]
+
+        u1, u2, u3 = U
+        du1dt = beta * u1 - u2 + sigma * u1 * (u1 ** 2 + u2 ** 2)
+        du2dt = u1 + beta * u2 + sigma * u2 * (u1 ** 2 + u2 ** 2)
+        du3dt = - u3
+        dudt = np.array([du1dt, du2dt, du3dt])
+
+        return dudt
+
     """
         We simulate the predator-prey equations for a = 1, d = 0.1, and choosing two b values on either side of 0.26. 
         The random values chosen for b1 and b2 are slightly distanced from 0.26, to ensure that the behaviours of the 
@@ -154,21 +135,21 @@ def main():
     oscillating periodically, whereas when b > 0.26, the solutions converge.
     """
 
-    args = [1, 0.16, 0.1]
     pc = phase_condition
-    u0 = np.array([1.2, 1.2, 6])
 
-    shooting_orbit(predator_prey, u0, pc, True, args)
+    pp_args = [1, 0.16, 0.1]
+
+    pp_u0 = np.array([1.2, 1.2, 6])
+
+    shooting_orbit(predator_prey, pp_u0, pc, True, pp_args)
 
     hopf_args = [1, -1]
     hopf_u0 = [1.2, 1.2, 8]
-    pc = phase_condition
 
     shooting_orbit(Hopf_bif, hopf_u0, pc, True, hopf_args)
 
     ext_args = [1, -1]
     ext_u0 = [1, 1, 1, 8]
-    pc = phase_condition
     shooting_orbit(Hopf_ext, ext_u0, pc, True, ext_args)
 
 
