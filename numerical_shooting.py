@@ -80,10 +80,10 @@ def shooting_orbit(ODE, u0, pc, system, *args):
     convergence = shooting_solution[3]
 
     if convergence == 'The solution converged.':
-        print(convergence + '\n')
+        print(convergence + f' The ODE ran was {ODE.__name__}.\n')
         x0, t = shooting_solution[0][:-1], shooting_solution[0][-1]
     else:
-        raise ValueError(f"The shooting algorithm could not converge to a solution, please try again with different values.")
+        raise ValueError("The shooting algorithm could not converge to a solution, please try again with different values.")
 
     sol, sol_time = solve_ode(ODE, x0, 0, t, 'RK4', 0.01, True, *args)
 
@@ -124,11 +124,13 @@ def main():
         return dXdt
 
     """
-        We simulate the predator-prey equations for a = 1, d = 0.1, and choosing two b values on either side of 0.26
+        We simulate the predator-prey equations for a = 1, d = 0.1, and choosing two b values on either side of 0.26. 
+        The random values chosen for b1 and b2 are slightly distanced from 0.26, to ensure that the behaviours of the 
+        equations is clear to see. 
     """
 
-    b1 = np.round(np.random.uniform(0.1, 0.25), 2)
-    b2 = np.round(np.random.uniform(0.27, 0.5), 2)
+    b1 = np.round(np.random.uniform(0.1, 0.22), 2)
+    b2 = np.round(np.random.uniform(0.3, 0.5), 2)
 
     pred_prey_sol1, pred_prey_time1 = solve_ode(predator_prey, [0.2, 0.2], 0, 120, 'RK4', 0.01, True, [1, b1, 0.1])
     pred_prey_sol2, pred_prey_time2 = solve_ode(predator_prey, [0.2, 0.2], 0, 120, 'RK4', 0.01, True, [1, b2, 0.1])
@@ -158,18 +160,16 @@ def main():
 
     shooting_orbit(predator_prey, u0, pc, True, args)
 
-    # hopf_args = [1, -1]
-    # u0 = [1.2, 1.2, 8]
-    # pc = phase_condition
-    #
-    # real_sol = fsolve(shooting(Hopf_bif), u0, (pc, hopf_args), full_output=True)
-    # print(real_sol[0])
+    hopf_args = [1, -1]
+    hopf_u0 = [1.2, 1.2, 8]
+    pc = phase_condition
 
-    # shooting_cycle(Hopf_bif, Hopf_bif_true_sol, shooting_solution, 'yes', args)
-    # shooting_orbit(Hopf_bif, shooting_solution, args)
+    shooting_orbit(Hopf_bif, hopf_u0, pc, True, hopf_args)
 
-    # args = [1, -1]
-    # shooting_solution = shooting(Hopf_ext, [1, 1, 1, 8], phase_condition, args)
+    ext_args = [1, -1]
+    ext_u0 = [1, 1, 1, 8]
+    pc = phase_condition
+    shooting_orbit(Hopf_ext, ext_u0, pc, True, ext_args)
 
 
 if __name__ == '__main__':
