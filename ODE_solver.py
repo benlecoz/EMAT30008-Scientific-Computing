@@ -87,7 +87,7 @@ def input_test(test, test_name, test_type):
         Parameters:
             test (Any):         parameter tested
             test_name (str):    name of parameter tested
-            test_type (str):    type that the parameter should be, either 'int_or_float', 'string' or 'function'
+            test_type (str):    type that the parameter should be, either 'int_or_float', 'string', 'function', 'boolean', or 'list_or_array'
 
         Returns:
             An error with a description of the issue with the type of the parameter if the test is failed
@@ -121,6 +121,13 @@ def input_test(test, test_name, test_type):
     if test_type == 'boolean':
         boolean()
 
+    def list_or_array():
+        if not isinstance(test, (list, np.ndarray)):
+            raise TypeError(f"The argument passed for {test_name} is not a subscriptable object, but a {type(test)}. Please input a subscriptable object")
+
+    if test_type == 'list_or_array':
+        list_or_array()
+
 
 def solve_ode(ODE, x0, t0, t1, method_name, deltat_max, system, *args):
     """
@@ -128,7 +135,7 @@ def solve_ode(ODE, x0, t0, t1, method_name, deltat_max, system, *args):
 
         Parameters:
             ODE (function):     the ODE function that we want to solve
-            x0 (ndarray):       initial x value to solve for
+            x0:                 initial x value to solve for
             t0 (float):         initial time value
             t1 (float):         final time value
             method_name (str):  name of the method to use, either 'euler' or 'RK4'
@@ -150,12 +157,41 @@ def solve_ode(ODE, x0, t0, t1, method_name, deltat_max, system, *args):
     # tests that the inputted system parameter is a boolean
     input_test(system, 'system', 'boolean')
 
-    # test inputs for all the initial x conditions, loop ensures tests on system of ODE
+    # test inputs for the initial x conditions if ODE is a system
     if system:
+        # test to make sure x0 is either a list or a numpy array
+        input_test(x0, 'x0', 'list_or_array')
+
+        # test to make sure x0 is not empty
+        if len(x0) == 0:
+            raise IndexError(f"Please do not input an empty x0")
+
+        # test to make sure that there are multiple initial conditions since system is defined as True
+        if len(x0) == 1:
+            raise TypeError(f"System is defined as True, but there is {len(x0)} initial condition. Please change system to False or input more initial conditions")
+
+        # cycle through all the values defined in x0 and test if there are the right type
         for x in range(len(x0)):
-            input_test(x, 'x0', 'int_or_float')
+            input_test(x0[x], 'x0', 'int_or_float')
+
+    # test inputs for the initial x conditions if ODE is NOT a system
     else:
-        input_test(x0, 'x0', 'int_or_float')
+        # if x0 is a list or a np.array, only allow a length of 1
+        if isinstance(x0, (list, np.ndarray)):
+
+            if len(x0) > 1:
+                raise TypeError(
+                    f"system is defined as False, but there is {len(x0)} initial conditions. Please change system to True or input only one initial condition")
+
+            elif len(x0) == 0:
+                raise IndexError(f"Please do not input an empty x0")
+
+            elif len(x0) == 1:
+                input_test(x0[0], 'x0', 'int_or_float')
+
+        # if x0 is a single input, check if that it is the right type
+        else:
+            input_test(x0, 'x0', 'int_or_float')
 
     # tests inputs for the time values and the maximum timestep
     input_test(t0, 't0', 'int_or_float')
