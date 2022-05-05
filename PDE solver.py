@@ -33,6 +33,15 @@ def u_exact(x, t):
     return y
 
 
+def matrix_form(method):
+
+    if method == 'Forward_Euler':
+        diag = [[lmbda] * (mx - 1), [1 - 2 * lmbda] * mx, [lmbda] * (mx - 1)]
+        FE_matrix = diags(diag, [-1, 0, 1])
+
+        return FE_matrix
+
+
 # Set numerical parameters
 mx = 30  # number of gridpoints in space
 mt = 1000  # number of gridpoints in time
@@ -53,15 +62,15 @@ u_jp1 = np.zeros(x.size)  # u at next time step
 
 # Set initial condition
 for i in range(0, mx + 1):
-    # u_j[i] = new_u_I(x[i], 1/2)
     u_j[i] = u_I(x[i])
+    # u_j[i] = new_u_I(x[i], 1/2)
 
 # Solve the PDE: loop over all time points
 for j in range(0, mt):
     # Forward Euler timestep at inner mesh points
     # PDE discretised at position x[i], time t[j]
-    for i in range(1, mx):
-        u_jp1[i] = u_j[i] + lmbda * (u_j[i - 1] - 2 * u_j[i] + u_j[i + 1])
+
+    u_jp1[1:] = matrix_form('Forward_Euler').dot(u_j[1:])
 
     # Boundary conditions
     u_jp1[0] = 0
