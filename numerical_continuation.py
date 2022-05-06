@@ -1,5 +1,4 @@
 import time
-
 from scipy.optimize import fsolve
 import matplotlib.pyplot as plt
 import numpy as np
@@ -19,19 +18,15 @@ def mod_Hopf_bif(U, t, args):
     return dudt
 
 
-def nat_param_continuation(ODE, u0, param_range, param_number, solver, discretisation, pc, system):
+def nat_param_continuation(ODE, u0, param_range, vary_par, param_number, solver, discretisation, pc):
 
     print(f'Running the natural parameter continuation for the {ODE.__name__} function.')
     start_time = time.time()
     warnings.filterwarnings('ignore')
 
-    if system:
-        args = param_range[1]
-        param_list = np.linspace(param_range[1], param_range[0], param_number)
+    args = param_range[vary_par]
 
-    else:
-        args = param_range[0]
-        param_list = np.linspace(param_range[0], param_range[1], param_number)
+    param_list = np.linspace(param_range[vary_par], param_range[abs(vary_par - 1)], param_number)
 
     first_sol = solver(discretisation(ODE), u0, (pc, args))
 
@@ -74,9 +69,9 @@ def pseudo_arclength_continuation(ODE, u0, pars, max_pars, vary_par, param_numbe
 
     v1 = solver(discretisation(ODE), np.round(v0, 2), (pc, pars_ind(pars, vary_par)))
 
-    def update_par(pars, vary_par, predicted_p):
+    def update_par(pars, vary_par, p):
 
-        pars[vary_par] = predicted_p
+        pars[vary_par] = p
 
         return pars_ind(pars, vary_par)
 
@@ -144,7 +139,7 @@ def main():
     pc = phase_condition
 
     # Running both the natural parameter and the pseudo arclength continuation code
-    cubic_sol, cubic_param_list = nat_param_continuation(cubic, u0, c_interval, 10000, fsolve, lambda x: x, pc, False)
+    cubic_sol, cubic_param_list = nat_param_continuation(cubic, u0, c_interval, 0, 10000, fsolve, lambda x: x, pc)
     sol, par = pseudo_arclength_continuation(cubic, u0, [-2], 2, 0, 50, lambda x: x, fsolve, pc, False)
 
     plt.plot(cubic_param_list, cubic_sol, label = 'Natural Parameter')
@@ -188,7 +183,7 @@ def main():
     u0 = np.array([1.2, 1.2, 6.4])
     pc = phase_condition
 
-    hopf_sol, hopf_param_list = nat_param_continuation(Hopf_bif, u0, beta_interval, 50, fsolve, shooting, pc, True)
+    hopf_sol, hopf_param_list = nat_param_continuation(Hopf_bif, u0, beta_interval, 1, 50, fsolve, shooting, pc)
     pseudo_hopf_sol, pseudo_hopf_param = pseudo_arclength_continuation(Hopf_bif, u0, [-1], 2, 0, 50, shooting, fsolve, pc, True)
 
     plt.plot(hopf_param_list, hopf_sol[:, 0], label='Natural Parameter')
@@ -211,7 +206,7 @@ def main():
     u0 = np.array([1.4, 0, 6.3])
     pc = phase_condition
 
-    mod_hopf_sol, mod_hopf_param_list = nat_param_continuation(mod_Hopf_bif, u0, beta_interval, 50, fsolve, shooting, pc, True)
+    mod_hopf_sol, mod_hopf_param_list = nat_param_continuation(mod_Hopf_bif, u0, beta_interval, 1, 50, fsolve, shooting, pc)
     pseudo_mod_hopf_sol, pseudo_mod_hopf_param = pseudo_arclength_continuation(mod_Hopf_bif, u0, [-1], 2, 0, 50, shooting, fsolve, pc, True)
 
     plt.plot(mod_hopf_param_list, mod_hopf_sol[:, 0], label='Natural Parameter')
