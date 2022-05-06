@@ -2,23 +2,28 @@ import time
 from scipy.optimize import fsolve
 import matplotlib.pyplot as plt
 import numpy as np
-import math
 from numerical_shooting import shooting, phase_condition
 import warnings
 
 
-def mod_Hopf_bif(U, t, args):
-    beta = args
-    u1, u2 = U
-
-    du1dt = beta * u1 - u2 + u1 * (u1 ** 2 + u2 ** 2) - u1 * (u1 ** 2 + u2 ** 2) ** 2
-    du2dt = u1 + beta * u2 + u2 * (u1 ** 2 + u2 ** 2) - u2 * (u1 ** 2 + u2 ** 2) ** 2
-    dudt = np.array([du1dt, du2dt])
-
-    return dudt
-
-
 def nat_param_continuation(ODE, u0, param_range, vary_par, param_number, solver, discretisation, pc):
+    """
+        Perform natural parameter continuation: increment the parameter by a set value and use the previous solution as
+        the initial guess for the next parameter.
+
+            Parameters:
+                ODE (function):         the ODE whos root we want to find
+                u0 (ndarray):           list of initial x0 and t values
+                param_range (ndarray):  range of parameters to run the code on
+                vary_par (int):         index of the parameter in param_range to start the code on
+                param_number (int):     number of equally spaced parameters to test for within the param_range
+                solver:                 solver used
+                discretisation:         discretisation method used
+                pc (function):          phase condition function
+
+            Returns:
+                Array of all the parameter values tested for, as well as the solutions to the equations for each parameter value
+        """
 
     print(f'Running the natural parameter continuation for the {ODE.__name__} function.')
     start_time = time.time()
@@ -42,6 +47,26 @@ def nat_param_continuation(ODE, u0, param_range, vary_par, param_number, solver,
 
 
 def pseudo_arclength_continuation(ODE, u0, pars, max_pars, vary_par, param_number, discretisation, solver, pc, system):
+    """
+         Perform natural parameter continuation: increment the parameter by a set value and use the previous solution as
+         the initial guess for the next parameter.
+
+             Parameters:
+                 ODE (function):         the ODE whos root we want to find
+                 u0 (ndarray):           list of initial x0 and t values
+                 pars (list):            list of the intial parameter to test for
+                 max_pars (int):         value of the maximum parameter to test for
+                 vary_par (int):         index of the parameter in param_range to start the code on
+                 param_number (int):     number of equally spaced parameters to test for within the param_range
+                 solver:                 solver used
+                 discretisation:         discretisation method used
+                 pc (function):          phase condition function
+                 system (boolean):       True if the ODE is a system of equations, False otherwise
+
+             Returns:
+                 Array of all the parameter values tested for, as well as the solutions to the equations for each parameter value
+         """
+
 
     print(f'Running the pseudo arc length continuation for the {ODE.__name__} function.')
 
@@ -145,7 +170,6 @@ def main():
     plt.plot(cubic_param_list, cubic_sol, label = 'Natural Parameter')
     plt.plot(par, sol, label = 'Pseudo Arc Length')
     plt.xlabel('c')
-    plt.ylabel('x')
     plt.legend()
     plt.show()
 
@@ -189,7 +213,6 @@ def main():
     plt.plot(hopf_param_list, hopf_sol[:, 0], label='Natural Parameter')
     plt.plot(pseudo_hopf_param, pseudo_hopf_sol, label='Pseudo Arc Length')
     plt.xlabel('c')
-    plt.ylabel('x')
     plt.legend()
     plt.show()
 
@@ -202,6 +225,16 @@ def main():
     Next, we repeat the same process for the modified Hopf bifurcation equations
     """
 
+    def mod_Hopf_bif(U, t, args):
+        beta = args
+        u1, u2 = U
+
+        du1dt = beta * u1 - u2 + u1 * (u1 ** 2 + u2 ** 2) - u1 * (u1 ** 2 + u2 ** 2) ** 2
+        du2dt = u1 + beta * u2 + u2 * (u1 ** 2 + u2 ** 2) - u2 * (u1 ** 2 + u2 ** 2) ** 2
+        dudt = np.array([du1dt, du2dt])
+
+        return dudt
+
     beta_interval = np.array([-1, 2])
     u0 = np.array([1.4, 0, 6.3])
     pc = phase_condition
@@ -212,7 +245,6 @@ def main():
     plt.plot(mod_hopf_param_list, mod_hopf_sol[:, 0], label='Natural Parameter')
     plt.plot(pseudo_mod_hopf_param, pseudo_mod_hopf_sol, label='Pseudo Arc Length')
     plt.xlabel('c')
-    plt.ylabel('x')
     plt.legend()
     plt.show()
 
