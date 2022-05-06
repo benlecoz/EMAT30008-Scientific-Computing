@@ -256,23 +256,6 @@ def solve_ode(ODE, x0, t0, t1, method_name, deltat_max, system, *args):
     return X, T
 
 
-def SO_ode_plot(solution, time):
-    """
-     Plots all the solution to the ODE, against the time values
-
-         Parameters:
-            solution (ndarray):    Array of the solutions returned by the solve_ode function
-            time (ndarray):        Array of the time values returned by the solve_ode function
-
-    """
-
-    for i in range(len(solution[-1, :])):
-        plt.plot(time, solution[:, i], label=('S' + str(i)))
-
-    plt.legend()
-    plt.show()
-
-
 def main():
 
     """
