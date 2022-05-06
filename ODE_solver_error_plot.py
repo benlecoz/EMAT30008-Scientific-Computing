@@ -5,6 +5,7 @@ from math import exp, pi
 import random
 import warnings
 import time
+from ODE_solver import input_test, test_init_conds
 
 
 def error(ODE, ODE_sol, u0, num, plot, minmax, timing, system, *args):
@@ -14,7 +15,7 @@ def error(ODE, ODE_sol, u0, num, plot, minmax, timing, system, *args):
         Parameters:
             ODE (function):     the ODE function that we want to solve
             ODE_sol (function): the true solution to the ODE function that we want to solve
-            u0 (list):          initial conditions x0, t0 and t1
+            u0:                 initial conditions x0, t0 and t1
             num (int):          number of timesteps
             plot (bool):        plots the Euler and RK4 errors against the timesteps if True
             minmax (bool):      visualise overlapping Euler and RK4 errors if True
@@ -25,6 +26,22 @@ def error(ODE, ODE_sol, u0, num, plot, minmax, timing, system, *args):
         Returns:
             Arrays of the Euler and RK4 errors at each timestep
     """
+
+    """
+    Test all the inputs of the error function
+    """
+
+    input_test(ODE, 'ODE', 'function')
+    input_test(ODE_sol, 'ODE_sol', 'function')
+
+    input_test(system, 'system', 'boolean')
+    input_test(plot, 'plot', 'boolean')
+    input_test(minmax, 'minmax', 'boolean')
+    input_test(timing, 'timing', 'boolean')
+
+    test_init_conds(u0, True)
+
+    input_test(num, 'num', 'int_or_float')
 
     def log_time_step(start, stop):
         """
