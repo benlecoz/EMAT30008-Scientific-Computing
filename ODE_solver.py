@@ -97,36 +97,39 @@ def input_test(test, test_name, test_type):
         if not isinstance(test, (float, int)) and type(test) != np.int_ and type(test) != np.float_:
             raise TypeError(f"The argument passed for {test_name} is not a float or an integer, but a {type(test)}. Please input an integer or a float")
 
-    if test_type == 'int_or_float':
-        int_or_float()
-
     def function():
         if not callable(test):
             raise TypeError(f"The argument passed for {test_name} is not a function, but a {type(test)}. Please input a function")
-
-    if test_type == 'function':
-        function()
 
     def string():
         if not isinstance(test, str):
             raise TypeError(f"The argument passed for {test_name} is not a string, but a {type(test)}. Please input a string")
 
-    if test_type == 'string':
-        string()
-
     def boolean():
         if not isinstance(test, bool):
             raise TypeError(f"The argument passed for {test_name} is not a boolean, but a {type(test)}. Please input a boolean")
-
-    if test_type == 'boolean':
-        boolean()
 
     def list_or_array():
         if not isinstance(test, (list, np.ndarray)):
             raise TypeError(f"The argument passed for {test_name} is not a list or an array, but a {type(test)}. Please input a list or an array")
 
-    if test_type == 'list_or_array':
+    if test_type == 'int_or_float':
+        int_or_float()
+
+    elif test_type == 'function':
+        function()
+
+    elif test_type == 'boolean':
+        boolean()
+
+    elif test_type == 'string':
+        string()
+
+    elif test_type == 'list_or_array':
         list_or_array()
+
+    else:
+        raise ValueError(f"Please input a valid test name. Test options are 'int_or_float', 'string', 'function', 'boolean', or 'list_or_array', while the input was {test_name}.")
 
 
 def test_init_conds(x0, system):
@@ -141,7 +144,7 @@ def test_init_conds(x0, system):
 
         # test to make sure that there are multiple initial conditions since system is defined as True
         if len(x0) == 1:
-            raise TypeError(f"System is defined as True, but there is {len(x0)} initial condition. Please change system to False or input more initial conditions")
+            raise TypeError(f"system is defined as True, but there is {len(x0)} initial condition. Please change system to False or input more initial conditions")
 
         # cycle through all the values defined in x0 and test if there are the right type
         for x in range(len(x0)):
