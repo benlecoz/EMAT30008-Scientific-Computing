@@ -124,19 +124,21 @@ def shooting_orbit(ODE, u0, pc, system, *args):
 
         for i in range(sol.shape[1]):
             ax.plot(sol_time, sol[:, i], label = 'S' + str(i))
-            plt.xlabel('x')
-            plt.ylabel('y')
+            ax.set_xlabel('t')
+            ax.title.set_text(f'Isolated periodic orbit of {ODE.__name__} function')
             plt.legend()
 
     if system:
         fig, (ax1, ax2) = plt.subplots(1, 2)
-        ax1.plot(sol[:, 0], sol[:, 1], label = 'Periodic Orbit')
-        ax1.set_xlabel('S0')
-        ax1.set_ylabel('S1')
-        plt.legend()
-        plot_sol(ax2)
+        ax2.plot(sol[:, 0], sol[:, 1])
+        ax2.set_xlabel('S0')
+        ax2.set_ylabel('S1')
+        ax2.title.set_text(f'{ODE.__name__} equations plotted against each other')
+        ax2.legend()
+        plot_sol(ax1)
     else:
-        plot_sol(plt)
+        fig, ax1 = plt.subplots(1, 1)
+        plot_sol(ax1)
 
     plt.show()
 
@@ -178,15 +180,17 @@ def main():
 
     fig, (ax1, ax2) = plt.subplots(1, 2)
 
-    ax1.plot(pred_prey_time1, pred_prey_sol1, label = 'Predator Prey equation with b = ' + str(b1))
-    ax1.legend()
+    ax1.plot(pred_prey_time1, pred_prey_sol1)
     ax1.set_xlabel('x')
     ax1.set_ylabel('y')
+    ax1.title.set_text('Predator Prey equations with b = ' + str(b1))
+    ax1.legend()
 
-    ax2.plot(pred_prey_time2, pred_prey_sol2, label = 'Predator Prey equation with b = ' + str(b2))
+    ax2.plot(pred_prey_time2, pred_prey_sol2)
     ax2.legend()
     ax2.set_xlabel('x')
     ax2.set_ylabel('y')
+    ax2.title.set_text('Predator Prey equations with b = ' + str(b2))
 
     plt.show()
 
@@ -212,13 +216,15 @@ def main():
 
     fig, (ax1, ax2) = plt.subplots(1, 2)
 
-    ax1.plot(pred_prey_time3, pred_prey_sol3, label = 'Predator Prey equation with b = 0.1')
+    ax1.plot(pred_prey_time3, pred_prey_sol3)
     ax1.set_xlabel('t')
-    ax1.set_ylabel('x')
+    ax1.title.set_text('Predator Prey equations with b = 0.1')
+    ax1.legend()
 
-    ax2.plot(pred_prey_time3[5000:8400], pred_prey_sol3[5000:8400, :], label = 'Predator Prey equation with b = 0.1')
+    ax2.plot(pred_prey_time3[5000:8400], pred_prey_sol3[5000:8400, :])
     ax2.set_xlabel('t')
-    ax2.set_ylabel('x')
+    ax2.title.set_text('Manually isolated periodic orbit of P-P equations for b = 0.1')
+    ax2.legend()
 
     plt.show()
 
@@ -259,6 +265,14 @@ def main():
         dudt = np.array([du1dt, du2dt])
 
         return dudt
+
+    def true_Hopf_bif(t, phase, args):
+        beta = args[0]
+
+        u1 = sqrt(beta) * cos(t + phase)
+        u2 = sqrt(beta) * sin(t + phase)
+
+        return np.array([u1, u2])
 
     hopf_args = [1, -1]
     hopf_u0 = [1.2, 1.2, 8]
