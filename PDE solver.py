@@ -68,9 +68,9 @@ def numerical_initialisation():
     deltax = x[1] - x[0]  # gridspacing in x
     deltat = t[1] - t[0]  # gridspacing in t
     lmbda = kappa * deltat / (deltax ** 2)  # mesh fourier number
-    print("deltax=", deltax)
-    print("deltat=", deltat)
-    print("lambda=", lmbda)
+    # print("deltax=", deltax)
+    # print("deltat=", deltat)
+    # print("lambda=", lmbda)
 
     # Set up the solution variables
     u_j = np.zeros(x.size)  # u at current time step
@@ -80,7 +80,7 @@ def numerical_initialisation():
     for i in range(0, mx + 1):
         u_j[i] = u_I(x[i])
         # u_j[i] = new_u_I(x[i], 1/2)
-    print(len(u_j))
+
     return x, mx, mt, lmbda, u_j, u_jp1
 
 
@@ -122,14 +122,17 @@ def Backwards_Euler():
         # Forward Euler timestep at inner mesh points
         # PDE discretised at position x[i], time t[j]
 
-        u_jp1[1:] = spsolve(matrix_form('BE', lmbda, mx), u_j[1:])
+        BFE = matrix_form('BE', lmbda, mx - 1)
+
+        u_jp1 = spsolve(BFE, u_j[1:mx])
 
         # Boundary conditions
-        u_jp1[0] = 0
-        u_jp1[mx] = 0
+        u_j[0] = 0
+        u_j[1:mx] = u_jp1
+        u_j[mx] = 0
 
         # Save u_j at time t[j+1]
-        u_j[:] = u_jp1[:]
+        # u_j[:] = u_jp1[:]
 
     return x, u_j
 
@@ -139,7 +142,7 @@ FE_x, FE_u_j = Forward_Euler()
 BE_x, BE_u_j = Backwards_Euler()
 
 # pl.plot(FE_x, FE_u_j, 'ro', label='num')
-pl.plot(FE_x, FE_u_j, 'ro', label='num')
+pl.plot(BE_x, BE_u_j, 'ro', label='num')
 xx = np.linspace(0, L, 250)
 pl.plot(xx, u_exact(xx, T), 'b-', label='exact')
 pl.xlabel('x')
