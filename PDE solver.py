@@ -99,13 +99,6 @@ def Forward_Euler():
 
         u_jp1 = np.dot(AFE, u_j[1:mx])
 
-        # Boundary conditions
-        # u_jp1[0] = 0
-        # u_jp1[mx] = 0
-        #
-        # # Save u_j at time t[j+1]
-        # u_j[:] = u_jp1[:]
-
         u_j[0] = 0
         u_j[1:mx] = u_jp1
         u_j[mx] = 0
@@ -117,22 +110,32 @@ def Backwards_Euler():
 
     x, mx, mt, lmbda, u_j, u_jp1 = numerical_initialisation()
 
-    # Solve the PDE: loop over all time points
+    ABE = matrix_form('BE', lmbda, mx - 1)
+
     for j in range(0, mt):
-        # Forward Euler timestep at inner mesh points
-        # PDE discretised at position x[i], time t[j]
 
-        BFE = matrix_form('BE', lmbda, mx - 1)
+        u_jp1 = spsolve(ABE, u_j[1:mx])
 
-        u_jp1 = spsolve(BFE, u_j[1:mx])
-
-        # Boundary conditions
         u_j[0] = 0
         u_j[1:mx] = u_jp1
         u_j[mx] = 0
 
-        # Save u_j at time t[j+1]
-        # u_j[:] = u_jp1[:]
+    return x, u_j
+
+
+def Crank_Nicholson():
+
+    x, mx, mt, lmbda, u_j, u_jp1 = numerical_initialisation()
+
+    ACN, BCN = matrix_form('CN', lmbda, mx - 1)
+
+    for j in range(0, mt):
+
+        u_jp1 = spsolve(ACN, BCN * u_j[1:mx])
+
+        u_j[0] = 0
+        u_j[1:mx] = u_jp1
+        u_j[mx] = 0
 
     return x, u_j
 
@@ -140,9 +143,11 @@ def Backwards_Euler():
 # Plot the final result and exact solution
 FE_x, FE_u_j = Forward_Euler()
 BE_x, BE_u_j = Backwards_Euler()
+CN_x, CN_u_j = Crank_Nicholson()
 
 # pl.plot(FE_x, FE_u_j, 'ro', label='num')
-pl.plot(BE_x, BE_u_j, 'ro', label='num')
+pl.plot(CN_x, CN_u_j, 'ro', label='num')
+
 xx = np.linspace(0, L, 250)
 pl.plot(xx, u_exact(xx, T), 'b-', label='exact')
 pl.xlabel('x')
