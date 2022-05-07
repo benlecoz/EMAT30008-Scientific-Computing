@@ -220,19 +220,18 @@ def main():
     Plot a double logarithmic scale of the error of Euler and RK4, depending on the timestep
     """
 
-    def FO_f(x, t, *args):
+    def FO_f(x, t):
         """
         Function for first order ODE dxdt = x
             Parameters:
                 x (int):    x value
                 t (int):    t value
-                *args:      any additional arguments that ODE expects
 
             Returns:
                 Array of dxdt at (x,t)
         """
 
-        dxdt = np.array([x], *args)
+        dxdt = np.array([x])
 
         return dxdt
 
