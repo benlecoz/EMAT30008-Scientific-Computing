@@ -170,9 +170,9 @@ def test_init_conds(x0, system):
             input_test(x0, 'x0', 'int_or_float')
 
 
-def test_func_output(ODE, x0, t, system):
+def test_func_output(ODE, x0, t, system, *args):
 
-    test_output = ODE(x0, t)
+    test_output = ODE(x0, t, *args)
 
     if not isinstance(test_output, (int, np.ndarray, float)):
         raise TypeError(f"Output of the ODE has to be int/ndarray/float, but was {type(test_output)} instead.")
@@ -227,7 +227,7 @@ def solve_ode(ODE, x0, t0, t1, method_name, deltat_max, system, *args):
     input_test(method_name, 'method', 'string')
 
     # test the output of the ODE is the right type and has the right dimensions
-    test_func_output(ODE, x0, t0, system)
+    test_func_output(ODE, x0, t0, system, *args)
 
     """
     Test to see if the inputted method has the right name
