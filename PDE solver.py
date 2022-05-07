@@ -9,6 +9,7 @@ import numpy as np
 import pylab as pl
 from math import pi
 from scipy.sparse import diags
+from scipy.sparse.linalg import spsolve
 
 # Set problem parameters/functions
 kappa = 1.0  # diffusion constant
@@ -35,16 +36,30 @@ def u_exact(x, t):
 
 def matrix_form(method, lmbda, mx):
 
-    if method == 'Forward_Euler':
+    if method == 'FE':
         diag = [[lmbda] * (mx - 1), [1 - 2 * lmbda] * mx, [lmbda] * (mx - 1)]
-        FE_matrix = diags(diag, [-1, 0, 1])
+        FE_matrix = (diags(diag, [-1, 0, 1])).toarray()
 
         return FE_matrix
+
+    if method == 'BE':
+        diag = [[- lmbda] * (mx - 1), [1 + 2 * lmbda] * mx, [- lmbda] * (mx - 1)]
+        BE_matrix = diags(diag, [-1, 0, 1])
+
+        return BE_matrix
+
+    if method == 'CN':
+        diag = [[-lmbda / 2] * (mx - 1), [1 + lmbda] * mx, [-lmbda / 2] * (mx - 1)]
+        CN_matrix1 = diags(diag, [-1, 0, 1])
+        diag = [[lmbda / 2] * (mx - 1), [1 - lmbda] * mx, [lmbda / 2] * (mx - 1)]
+        CN_matrix2 = diags(diag, [-1, 0, 1])
+
+        return CN_matrix1, CN_matrix2
 
 
 def numerical_initialisation():
     # Set numerical parameters
-    mx = 30  # number of gridpoints in space
+    mx = 10  # number of gridpoints in space
     mt = 1000  # number of gridpoints in time
 
     # Set up the numerical environment variables
@@ -65,11 +80,40 @@ def numerical_initialisation():
     for i in range(0, mx + 1):
         u_j[i] = u_I(x[i])
         # u_j[i] = new_u_I(x[i], 1/2)
-
+    print(len(u_j))
     return x, mx, mt, lmbda, u_j, u_jp1
 
 
 def Forward_Euler():
+
+    x, mx, mt, lmbda, u_j, u_jp1 = numerical_initialisation()
+
+    AFE = matrix_form('FE', lmbda, mx - 1)
+
+    add_vec = np.zeros(mx - 1)
+
+    for j in range(0, mt):
+
+        add_vec[0] = 1
+        add_vec[-1] = 1
+
+        u_jp1 = np.dot(AFE, u_j[1:mx])
+
+        # Boundary conditions
+        # u_jp1[0] = 0
+        # u_jp1[mx] = 0
+        #
+        # # Save u_j at time t[j+1]
+        # u_j[:] = u_jp1[:]
+
+        u_j[0] = 0
+        u_j[1:mx] = u_jp1
+        u_j[mx] = 0
+
+    return x, u_j
+
+
+def Backwards_Euler():
 
     x, mx, mt, lmbda, u_j, u_jp1 = numerical_initialisation()
 
@@ -78,7 +122,7 @@ def Forward_Euler():
         # Forward Euler timestep at inner mesh points
         # PDE discretised at position x[i], time t[j]
 
-        u_jp1[1:] = matrix_form('Forward_Euler', lmbda, mx).dot(u_j[1:])
+        u_jp1[1:] = spsolve(matrix_form('BE', lmbda, mx), u_j[1:])
 
         # Boundary conditions
         u_jp1[0] = 0
@@ -87,20 +131,15 @@ def Forward_Euler():
         # Save u_j at time t[j+1]
         u_j[:] = u_jp1[:]
 
-    return x, u_jp1
-
-
-def Backwards_Euler():
-
-    x, mx, mt, lmbda = numerical_initialisation()
-
-
+    return x, u_j
 
 
 # Plot the final result and exact solution
-FE_x, FE_u_jp1 = Forward_Euler()
+FE_x, FE_u_j = Forward_Euler()
+BE_x, BE_u_j = Backwards_Euler()
 
-pl.plot(FE_x, FE_u_jp1, 'ro', label='num')
+# pl.plot(FE_x, FE_u_j, 'ro', label='num')
+pl.plot(FE_x, FE_u_j, 'ro', label='num')
 xx = np.linspace(0, L, 250)
 pl.plot(xx, u_exact(xx, T), 'b-', label='exact')
 pl.xlabel('x')
