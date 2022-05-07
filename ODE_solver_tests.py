@@ -34,7 +34,7 @@ method_name = 'euler'  # Correct method name
 deltat_max = 0.01  # Correct deltat max
 
 """
-Start running the tests with intentionally bad inputs to make sure it can graciously handle wrong input types and values 
+Start running the tests with intentionally bad inputs/outputs to make sure it can graciously handle wrong types and values 
 """
 
 # Create a failed test list that will collect the names of all the failed tests, and same for the passed tests

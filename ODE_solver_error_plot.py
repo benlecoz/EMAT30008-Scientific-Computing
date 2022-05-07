@@ -5,7 +5,7 @@ from math import exp, pi
 import random
 import warnings
 import time
-from ODE_solver import input_test, test_init_conds
+from ODE_solver import input_test, test_init_conds, test_func_output
 
 
 def error(ODE, ODE_sol, u0, num, plot, minmax, timing, system, *args):
@@ -42,6 +42,7 @@ def error(ODE, ODE_sol, u0, num, plot, minmax, timing, system, *args):
     test_init_conds(u0, True)
 
     input_test(num, 'num', 'int_or_float')
+    test_func_output(ODE, u0[:-2], u0[-2], system)
 
     def log_time_step(start, stop):
         """
