@@ -82,7 +82,7 @@ def solve_to(ODE, x1, t1, t2, method, deltat_max, *args):
 
 def input_test(test, test_name, test_type):
     """
-    Tests the type of specific parameters
+    Tests the type of a specific parameter
 
         Parameters:
             test (Any):         parameter tested
@@ -144,7 +144,7 @@ def test_init_conds(x0, system):
 
         # test to make sure that there are multiple initial conditions since system is defined as True
         if len(x0) == 1:
-            raise TypeError(f"system is defined as True, but there is {len(x0)} initial condition. Please change system to False or input more initial conditions")
+            raise ValueError(f"system is defined as True, but there is {len(x0)} initial condition. Please change system to False or input more initial conditions")
 
         # cycle through all the values defined in x0 and test if there are the right type
         for x in range(len(x0)):
@@ -156,7 +156,7 @@ def test_init_conds(x0, system):
         if isinstance(x0, (list, np.ndarray)):
 
             if len(x0) > 1:
-                raise TypeError(
+                raise ValueError(
                     f"system is defined as False, but there is {len(x0)} initial conditions. Please change system to True or input only one initial condition")
 
             elif len(x0) == 0:
@@ -168,6 +168,22 @@ def test_init_conds(x0, system):
         # if x0 is a single input, check if that it is the right type
         else:
             input_test(x0, 'x0', 'int_or_float')
+
+
+def test_func_output(ODE, x0, t, system):
+
+    test_output = ODE(x0, t)
+
+    if not isinstance(test_output, (int, np.ndarray, float)):
+        raise TypeError(f"Output of the ODE has to be int/ndarray/float, but was {type(test_output)} instead.")
+
+    if system:
+        if len(test_output) != len(x0):
+            raise ValueError(f"Output of the ODE has length {len(test_output)}, while the initial conditions has length {len(x0)}.")
+    else:
+        if not isinstance(test_output, (float, int)) and type(test_output) != np.int_ and type(test_output) != np.float_:
+            if len(test_output) > 1:
+                raise ValueError(f"Output of the ODE has length {len(test_output)}, while the initial conditions has length 1.")
 
 
 def solve_ode(ODE, x0, t0, t1, method_name, deltat_max, system, *args):
@@ -210,6 +226,9 @@ def solve_ode(ODE, x0, t0, t1, method_name, deltat_max, system, *args):
     # tests that the inputted method is a string
     input_test(method_name, 'method', 'string')
 
+    # test the output of the ODE is the right type and has the right dimensions
+    test_func_output(ODE, x0, t0, system)
+
     """
     Test to see if the inputted method has the right name
     """
@@ -219,7 +238,7 @@ def solve_ode(ODE, x0, t0, t1, method_name, deltat_max, system, *args):
     elif method_name == 'RK4':
         method = RK4_step
     else:
-        raise TypeError(
+        raise ValueError(
             f"The method '{method_name}' is not accepted, please try 'euler' or 'RK4'")
 
     """
