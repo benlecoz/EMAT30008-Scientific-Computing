@@ -1,5 +1,6 @@
 import numpy as np
 from positional_arguments_checker import count_positional_args_required
+# from ODE_solver import solve_ode
 
 
 def input_test(test, test_name, test_type):
@@ -169,3 +170,29 @@ def test_pc_output(ODE, u0, pc, *args):
 
     else:
         raise TypeError(f"Output of the phase condition function needs to be multiple objects, not an int/float")
+
+
+def close_to_true(ODE_solver, ODE, ODE_true, u0, method_name, system, tol_range, *args):
+
+    empirical_sol = ODE_solver(ODE, u0[:-1], 0, u0[-1], method_name, 0.01, system, *args)
+    true_sol = ODE_true(u0[-1], *args)
+
+    tolerance_values = [10**x for x in list(range(tol_range[0], tol_range[1], 1))]
+
+    proximity = False
+    i = 0
+
+    while not proximity:
+        if system:
+            proximity = np.allclose(empirical_sol[0][-1, :], true_sol, rtol=tolerance_values[i])
+
+        else:
+            proximity = np.isclose(empirical_sol[0][-1], true_sol, rtol=tolerance_values[i])
+
+        i += 1
+
+        if i == 11:
+            raise ValueError(f"The empirical solution was never close to the true solution, to a tolerance of {tol_range[1]}. Please try again with a different ODE or check your functions.")
+
+    print(tolerance_values[i - 1])
+
