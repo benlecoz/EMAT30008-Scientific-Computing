@@ -55,6 +55,17 @@ def input_test(test, test_name, test_type):
 
 
 def test_init_conds(x0, system):
+    """
+    Tests the initial conditions
+
+        Parameters:
+            x0:             initial conditions to be tested
+            system (bool):  True if the ODE is a system of equations, False otherwise
+
+        Returns:
+            Raises an error if there is anything wrong with the initial conditions (wrong type/shape)
+    """
+
     # test inputs for the initial x conditions if ODE is a system
     if system:
         # test to make sure x0 is either a list or a numpy array
@@ -93,6 +104,19 @@ def test_init_conds(x0, system):
 
 
 def test_func_output(ODE, x0, t, system, *args):
+    """
+    Tests the output of a function
+
+        Parameters:
+            ODE (function): the ODE we want to test
+            x0:             initial conditions to be tested
+            t:              time value(s)
+            system (bool):  True if the ODE is a system of equations, False otherwise
+            *args:          any additional arguments that the ODE function defined above expects
+
+        Returns:
+            Raises an error if there is anything wrong with the output of the function (wrong type/shape)
+    """
 
     test_output = ODE(x0, t, *args)
 
@@ -110,7 +134,17 @@ def test_func_output(ODE, x0, t, system, *args):
 
 def test_pc_output(ODE, u0, pc, *args):
     """
-    Test the output of the phase condition function
+    Tests the output of a phase condition
+
+        Parameters:
+            ODE (function): the ODE that the phase condition is defined on
+            u0:             initial conditions x0 and t
+            pc (function):  phase condition we want to test
+            system (bool):  True if the ODE is a system of equations, False otherwise
+            *args:          any additional arguments that the ODE function defined above expects
+
+        Returns:
+            Raises an error if there is anything wrong with the output of the phase condition (wrong type/shape)
     """
 
     pos_args = count_positional_args_required(pc)
