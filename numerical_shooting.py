@@ -1,8 +1,8 @@
 from math import sqrt, cos, sin
-from positional_arguments_checker import count_positional_args_required
 import matplotlib.pyplot as plt
 import numpy as np
-from ODE_solver import solve_ode, input_test, test_init_conds, test_func_output
+from ODE_solver import solve_ode
+from input_output_tests import input_test, test_init_conds, test_func_output, test_pc_output
 from scipy.optimize import fsolve
 
 
@@ -23,30 +23,6 @@ def phase_condition(ODE, u0, *args):
     phase_con = ODE(x0, t, *args)[0]
 
     return x0, t, phase_con
-
-
-def test_pc_output(ODE, u0, pc, *args):
-    """
-    Test the output of the phase condition function
-    """
-
-    pos_args = count_positional_args_required(pc)
-
-    if pos_args != 2 and pos_args != 3:
-        raise IndexError(f"pc function needs to allow either 2 or 3 positional arguments: ODE, x0 and args (optional). Yet, this pc function allowed {pos_args} positional argument(s).")
-
-    # assign the output of the pc function to a test variable
-    test_output = pc(ODE, u0, *args)
-
-    # ensure that the output of the pc function is not a single int/float, else the len() function wont work
-    if not isinstance(test_output, (float, int)) and type(test_output) != np.int_ and type(test_output) != np.float_:
-
-        # test to see if the output is 3 objects (x0, t and phase_con)
-        if len(test_output) != 3:
-            raise ValueError(f"The phase condition function needs to have 3 outputs: x0, t and phase_con, while {ODE.__name__} has {len(test_output)}.")
-
-    else:
-        raise TypeError(f"Output of the phase condition function needs to be multiple objects, not an int/float")
 
 
 def shooting(ODE):
