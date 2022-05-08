@@ -74,7 +74,7 @@ def nat_param_continuation(ODE, u0, param_range, vary_par, param_number, solver,
     return sol, param_list
 
 
-def pseudo_arclength_continuation(ODE, u0, pars, max_pars, vary_par, param_number, discretisation, solver, pc, system):
+def pseudo_arclength_continuation(ODE, u0, param_range, vary_par, param_number, discretisation, solver, pc, system):
     """
          Perform natural parameter continuation: increment the parameter by a set value and use the previous solution as
          the initial guess for the next parameter.
@@ -82,8 +82,7 @@ def pseudo_arclength_continuation(ODE, u0, pars, max_pars, vary_par, param_numbe
              Parameters:
                  ODE (function):         the ODE whos root we want to find
                  u0 (ndarray):           list of initial x0 and t values
-                 pars (list):            list of the intial parameter to test for
-                 max_pars (int):         value of the maximum parameter to test for
+                 param_range:            value of the maximum parameter to test for
                  vary_par (int):         index of the parameter in param_range to start the code on
                  param_number (int):     number of equally spaced parameters to test for within the param_range
                  solver:                 solver used
@@ -107,10 +106,9 @@ def pseudo_arclength_continuation(ODE, u0, pars, max_pars, vary_par, param_numbe
 
     test_init_conds(u0, system)
 
-    input_test(pars, 'pars', 'list_or_array')
+    input_test(param_range, 'param_range', 'list_or_array')
 
     input_test(vary_par, 'vary_par', 'int_or_float')
-    input_test(max_pars, 'max_pars', 'int_or_float')
     input_test(param_number, 'param_number', 'int_or_float')
 
     """
@@ -123,31 +121,28 @@ def pseudo_arclength_continuation(ODE, u0, pars, max_pars, vary_par, param_numbe
 
     warnings.filterwarnings('ignore')
 
-    param_list = np.linspace(pars[vary_par], max_pars, param_number)
+    pars = [param_range[vary_par]]
+
+    param_list = np.linspace(param_range[vary_par], param_range[abs(vary_par - 1)], param_number)
 
     # calculate the first solution, and find the second parameter to solve using
-    if system:
-        v0 = solver(discretisation(ODE), u0, (pc, param_list[-1]))
-        pars[vary_par] = param_list[-2]
-        par_list = [param_list[-1], param_list[-2]]
-    else:
-        v0 = solver(discretisation(ODE), u0, (pc, param_list[0]))
-        pars[vary_par] = param_list[1]
-        par_list = [param_list[0], param_list[1]]
+    v0 = solver(discretisation(ODE), u0, (pc, param_list[0]))
+    pars[0] = param_list[1]
+    par_list = [param_list[0], param_list[1]]
 
     # calculate the second solution
-    v1 = solver(discretisation(ODE), np.round(v0, 2), (pc, pars[vary_par]))
+    v1 = solver(discretisation(ODE), np.round(v0, 2), (pc, pars[0]))
 
-    def update_par(pars, vary_par, p):
+    def update_par(pars, p):
         """
         Function that updates the pars value depending on the p value
         """
 
-        pars[vary_par] = p
+        pars[0] = p
 
         # if the ODE is a system, the update_pars function needs to return the pars indexed, otherwise the code doesn't run properly
         if system:
-            return pars[vary_par]
+            return pars[0]
         else:
             return pars
 
@@ -166,9 +161,9 @@ def pseudo_arclength_continuation(ODE, u0, pars, max_pars, vary_par, param_numbe
 
         predicted_state = np.append(predicted_x, predicted_p)
 
-        pars[vary_par] = predicted_state[-1]
+        pars[0] = predicted_state[-1]
 
-        pseudo_sol = solver(lambda state: np.append(discretisation(ODE)(state[:-1], pc, update_par(pars, vary_par, state[-1])), np.dot(state[:-1] - predicted_x, delta_x) + np.dot(state[-1] - predicted_p, delta_p)), predicted_state)
+        pseudo_sol = solver(lambda state: np.append(discretisation(ODE)(state[:-1], pc, update_par(pars, state[-1])), np.dot(state[:-1] - predicted_x, delta_x) + np.dot(state[-1] - predicted_p, delta_p)), predicted_state)
 
         solution.append(np.round(pseudo_sol[:-1], 3))
         par_list.append(pseudo_sol[-1])
@@ -214,8 +209,8 @@ def main():
     pc = phase_condition
 
     # Running both the natural parameter and the pseudo arclength continuation code
-    cubic_sol, cubic_param_list = nat_param_continuation(cubic, u0, c_interval, 0, 10000, fsolve, lambda x: x, pc, False)
-    sol, par = pseudo_arclength_continuation(cubic, u0, [-2], 2, 0, 50, lambda x: x, fsolve, pc, False)
+    cubic_sol, cubic_param_list = nat_param_continuation(cubic, u0, c_interval, 0, 100, fsolve, lambda x: x, pc, False)
+    sol, par = pseudo_arclength_continuation(cubic, u0, [-2, 2], 0, 50, lambda x: x, fsolve, pc, False)
 
     plt.plot(cubic_param_list, cubic_sol, label = 'Natural Parameter')
     plt.plot(par, sol, label = 'Pseudo Arc Length')
@@ -258,7 +253,7 @@ def main():
     pc = phase_condition
 
     hopf_sol, hopf_param_list = nat_param_continuation(Hopf_bif, u0, beta_interval, 1, 50, fsolve, shooting, pc, True)
-    pseudo_hopf_sol, pseudo_hopf_param = pseudo_arclength_continuation(Hopf_bif, u0, [-1], 2, 0, 50, shooting, fsolve, pc, True)
+    pseudo_hopf_sol, pseudo_hopf_param = pseudo_arclength_continuation(Hopf_bif, u0, np.array([-1, 2]), 1, 50, shooting, fsolve, pc, True)
 
     plt.plot(hopf_param_list, hopf_sol[:, 0], label='Natural Parameter')
     plt.plot(pseudo_hopf_param, pseudo_hopf_sol, label='Pseudo Arc Length')
@@ -290,7 +285,7 @@ def main():
     pc = phase_condition
 
     mod_hopf_sol, mod_hopf_param_list = nat_param_continuation(mod_Hopf_bif, u0, beta_interval, 1, 50, fsolve, shooting, pc, True)
-    pseudo_mod_hopf_sol, pseudo_mod_hopf_param = pseudo_arclength_continuation(mod_Hopf_bif, u0, [-1], 2, 0, 50, shooting, fsolve, pc, True)
+    pseudo_mod_hopf_sol, pseudo_mod_hopf_param = pseudo_arclength_continuation(mod_Hopf_bif, u0, [-1, 2], 1, 50, shooting, fsolve, pc, True)
 
     plt.plot(mod_hopf_param_list, mod_hopf_sol[:, 0], label='Natural Parameter')
     plt.plot(pseudo_mod_hopf_param, pseudo_mod_hopf_sol, label='Pseudo Arc Length')
