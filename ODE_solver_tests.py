@@ -1,5 +1,4 @@
 from ODE_solver import solve_ode
-from ODE_solver_error_plot import error
 import numpy as np
 
 # One of the error trap tests will raise a Visible Deprecation Warning, so this will suppress it
@@ -46,91 +45,91 @@ def ODE_solver_tests():
     failed_tests = []
     passed_tests = []
 
-    # input ODE is not a function
+    # ODE is not a function
     try:
         solve_ode('not a function', single_x0, t0, t1, method_name, deltat_max, False)
         failed_tests.append('ODE is not a function')
     except TypeError:
         passed_tests.append('ODE is not a function')
 
-    # input wrong type of x0
+    # wrong type of x0
     try:
         solve_ode(FO_f, 'not an initial condition', t0, t1, method_name, deltat_max, False)
         failed_tests.append('x0 is not a int/float')
     except TypeError:
         passed_tests.append('x0 is not a int/float')
 
-    # input a list for x0 where one condition is not the right type
+    # x0 where one condition is not the right type
     try:
         solve_ode(SO_f, [1, 'int'], t0, t1, method_name, deltat_max, True)
         failed_tests.append('one value of x0 is not a int/float')
     except TypeError:
         passed_tests.append('one value of x0 is not a int/float')
 
-    # input a single x0 when ODE is a system of equations
+    # single x0 when ODE is a system of equations
     try:
         solve_ode(SO_f, single_x0, t0, t1, method_name, deltat_max, True)
         failed_tests.append('single x0 for system ODE')
     except ValueError:
         passed_tests.append('single x0 for system ODE')
 
-    # input multiple x0 when ODE is single equation
+    # multiple x0 when ODE is single equation
     try:
         solve_ode(FO_f, system_x0, t0, t1, method_name, deltat_max, False)
         failed_tests.append('system x0 for single ODE')
     except ValueError:
         passed_tests.append('system x0 for single ODE')
 
-    # input an empty list for x0 when system is False
+    # empty list for x0 when system is False
     try:
         solve_ode(FO_f, [], t0, t1, method_name, deltat_max, False)
         failed_tests.append('empty x0 for single')
     except IndexError:
         passed_tests.append('empty x0 for single')
 
-    # input an empty list for x0 when system is True
+    # empty list for x0 when system is True
     try:
         solve_ode(FO_f, [], t0, t1, method_name, deltat_max, True)
         failed_tests.append('empty x0 for system')
     except IndexError:
         passed_tests.append('empty x0 for system')
 
-    # input wrong type for t0
+    # wrong type for t0
     try:
         solve_ode(FO_f, single_x0, 'not a int/float', t1, method_name, deltat_max, False)
         failed_tests.append('t0 is not an int/float')
     except TypeError:
         passed_tests.append('t0 is not an int/float')
 
-    # input wrong type for t1
+    # wrong type for t1
     try:
         solve_ode(FO_f, single_x0, t0, 'not a int/float', method_name, deltat_max, False)
         failed_tests.append('t1 is not an int/float')
     except TypeError:
         passed_tests.append('t1 is not an int/float')
 
-    # input wrong type for method_name
+    # wrong type for method_name
     try:
         solve_ode(FO_f, single_x0, t0, t1, 1, deltat_max, False)
         failed_tests.append('method_name is not a string')
     except TypeError:
         passed_tests.append('method_name is not a string')
 
-    # input wrong value for method_name
+    # wrong value for method_name
     try:
         solve_ode(FO_f, single_x0, t0, t1, 'not euler or RK4', deltat_max, False)
         failed_tests.append('method_name has wrong name')
     except ValueError:
         passed_tests.append('method_name has wrong name')
 
-    # input wrong type for deltat_max
+    # wrong type for deltat_max
     try:
         solve_ode(FO_f, single_x0, t0, t1, method_name, 'not deltat_max', False)
         failed_tests.append('deltat_max is not a int/float')
     except TypeError:
         passed_tests.append('deltat_max is not a int/float')
 
-    # input wrong type for system
+    # wrong type for system
     try:
         solve_ode(FO_f, single_x0, t0, t1, method_name, deltat_max, 1)
         failed_tests.append('system is not a boolean')
