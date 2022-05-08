@@ -1,8 +1,8 @@
 from math import sqrt, cos, sin
-
+from positional_arguments_checker import count_positional_args_required
 import matplotlib.pyplot as plt
 import numpy as np
-from ODE_solver import solve_ode, input_test, test_init_conds
+from ODE_solver import solve_ode, input_test, test_init_conds, test_func_output
 from scipy.optimize import fsolve
 
 
@@ -23,6 +23,30 @@ def phase_condition(ODE, u0, *args):
     phase_con = ODE(x0, t, *args)[0]
 
     return x0, t, phase_con
+
+
+def test_pc_output(ODE, u0, pc, *args):
+    """
+    Test the output of the phase condition function
+    """
+
+    pos_args = count_positional_args_required(pc)
+
+    if pos_args != 2 and pos_args != 3:
+        raise IndexError(f"pc function needs to allow either 2 or 3 positional arguments: ODE, x0 and args (optional). Yet, this pc function allowed {pos_args} positional argument(s).")
+
+    # assign the output of the pc function to a test variable
+    test_output = pc(ODE, u0, *args)
+
+    # ensure that the output of the pc function is not a single int/float, else the len() function wont work
+    if not isinstance(test_output, (float, int)) and type(test_output) != np.int_ and type(test_output) != np.float_:
+
+        # test to see if the output is 3 objects (x0, t and phase_con)
+        if len(test_output) != 3:
+            raise ValueError(f"The phase condition function needs to have 3 outputs: x0, t and phase_con, while {ODE.__name__} has {len(test_output)}.")
+
+    else:
+        raise TypeError(f"Output of the phase condition function needs to be multiple objects, not an int/float")
 
 
 def shooting(ODE):
@@ -78,7 +102,7 @@ def shooting_orbit(ODE, u0, pc, system, *args):
             ODE (function): the ODE whos root we want to find
             u0:             list of initial x0 and t values
             pc (function):  phase condition function
-            system (bool):  True if the ODE is a system of equations
+            system (bool):  True if the ODE is a system of equations, False otherwise
             *args:          any additional arguments that the ODE function defined above expects
 
     """
@@ -94,10 +118,14 @@ def shooting_orbit(ODE, u0, pc, system, *args):
     input_test(system, 'system', 'boolean')
 
     # test inputs for the initial u0 conditions
-    test_init_conds(u0, system)
+    test_init_conds(u0[:-1], system)
 
     # tests that the inputted phase condition is a function
     input_test(pc, 'phase condition', 'function')
+
+    test_func_output(ODE, u0[:-1], u0[-1], system, *args)
+
+    test_pc_output(ODE, u0, pc, *args)
 
     """
     Now that all the inputs have been successfully tested and we confirm that they all have the right type, we can start
@@ -117,7 +145,7 @@ def shooting_orbit(ODE, u0, pc, system, *args):
     else:
         raise ValueError("The shooting algorithm could not converge to a solution, please try again with different values.")
 
-    sol, sol_time = solve_ode(ODE, x0, 0, t, 'RK4', 0.01, True, *args)
+    sol, sol_time = solve_ode(ODE, x0, 0, t, 'RK4', 0.01, system, *args)
 
     # if this is system of ODEs, then plot the shooting orbit, else just plot the solutiona against time
     def plot_sol(ax):
@@ -125,16 +153,16 @@ def shooting_orbit(ODE, u0, pc, system, *args):
         for i in range(sol.shape[1]):
             ax.plot(sol_time, sol[:, i], label = 'S' + str(i))
             ax.set_xlabel('t')
-            ax.title.set_text(f'Isolated periodic orbit of {ODE.__name__} function')
-            plt.legend()
+            ax.set_ylabel('dX/dt')
+            # ax.set_title(f'Isolated periodic orbit of {ODE.__name__} function', fontsize = 7)
+            ax.legend()
 
     if system:
         fig, (ax1, ax2) = plt.subplots(1, 2)
         ax2.plot(sol[:, 0], sol[:, 1])
         ax2.set_xlabel('S0')
         ax2.set_ylabel('S1')
-        ax2.title.set_text(f'{ODE.__name__} equations plotted against each other')
-        ax2.legend()
+        # ax2.set_title(f'{ODE.__name__} equations plotted against each other', fontsize = 7)
         plot_sol(ax1)
     else:
         fig, ax1 = plt.subplots(1, 1)
@@ -178,25 +206,34 @@ def main():
     pred_prey_sol1, pred_prey_time1 = solve_ode(predator_prey, [0.2, 0.2], 0, 120, 'RK4', 0.01, True, [1, b1, 0.1])
     pred_prey_sol2, pred_prey_time2 = solve_ode(predator_prey, [0.2, 0.2], 0, 120, 'RK4', 0.01, True, [1, b2, 0.1])
 
-    fig, (ax1, ax2) = plt.subplots(1, 2)
+    fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
 
     ax1.plot(pred_prey_time1, pred_prey_sol1)
     ax1.set_xlabel('x')
     ax1.set_ylabel('y')
     ax1.title.set_text('Predator Prey equations with b = ' + str(b1))
-    ax1.legend()
 
-    ax2.plot(pred_prey_time2, pred_prey_sol2)
-    ax2.legend()
-    ax2.set_xlabel('x')
-    ax2.set_ylabel('y')
-    ax2.title.set_text('Predator Prey equations with b = ' + str(b2))
+    ax2.plot(pred_prey_sol1[:, 0], pred_prey_sol1[:, 1])
+    ax2.set_xlabel('S0')
+    ax2.set_ylabel('S1')
+    ax2.title.set_text('Predator Prey equations plotted against each other with b = ' + str(b1))
+
+    ax3.plot(pred_prey_time2, pred_prey_sol2)
+    ax3.set_xlabel('x')
+    ax3.set_ylabel('y')
+    ax3.title.set_text('Predator Prey equations with b = ' + str(b2))
+
+    ax4.plot(pred_prey_sol2[:, 0], pred_prey_sol2[:, 1])
+    ax4.set_xlabel('S0')
+    ax4.set_ylabel('S1')
+    ax4.title.set_text('Predator Prey equations plotted against each other with b = ' + str(b2))
 
     plt.show()
-
     """
-    Plotting this long term, we see that when b < 0.26, the predator prey solutions start 
-    oscillating periodically, whereas when b > 0.26, the solutions converge.
+    Plotting this long term, we see that when b < 0.26, the predator prey solutions start oscillating periodically. 
+    This is evidenced by plotting both solutions against each other, which shows a periodic orbit after a bit of calibration. 
+    Whereas when b > 0.26, the solutions converge. When plotting these solutions against each other, we can see that 
+    the solution diverges. 
     """
 
     """
@@ -219,12 +256,10 @@ def main():
     ax1.plot(pred_prey_time3, pred_prey_sol3)
     ax1.set_xlabel('t')
     ax1.title.set_text('Predator Prey equations with b = 0.1')
-    ax1.legend()
 
     ax2.plot(pred_prey_time3[5000:8400], pred_prey_sol3[5000:8400, :])
     ax2.set_xlabel('t')
     ax2.title.set_text('Manually isolated periodic orbit of P-P equations for b = 0.1')
-    ax2.legend()
 
     plt.show()
 
