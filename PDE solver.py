@@ -34,8 +34,15 @@ def u_exact(x, t):
     return y
 
 
-def matrix_form(method, lmbda, mx):
+def left_boundary():
+    return 0
 
+
+def right_boundary():
+    return 1
+
+
+def matrix_form(method, lmbda, mx):
     if method == 'FE':
         diag = [[lmbda] * (mx - 1), [1 - 2 * lmbda] * mx, [lmbda] * (mx - 1)]
         FE_matrix = (diags(diag, [-1, 0, 1])).toarray()
@@ -85,7 +92,6 @@ def numerical_initialisation():
 
 
 def Forward_Euler():
-
     x, mx, mt, lmbda, u_j, u_jp1 = numerical_initialisation()
 
     AFE = matrix_form('FE', lmbda, mx - 1)
@@ -93,49 +99,55 @@ def Forward_Euler():
     add_vec = np.zeros(mx - 1)
 
     for j in range(0, mt):
+        add_vec[0] = left_boundary()
+        add_vec[-1] = right_boundary()
 
-        add_vec[0] = 1
-        add_vec[-1] = 1
+        u_jp1 = np.dot(AFE, u_j[1:mx]) + add_vec * lmbda
 
-        u_jp1 = np.dot(AFE, u_j[1:mx])
-
-        u_j[0] = 0
+        u_j[0] = left_boundary()
         u_j[1:mx] = u_jp1
-        u_j[mx] = 0
+        u_j[mx] = right_boundary()
 
     return x, u_j
 
 
 def Backwards_Euler():
-
     x, mx, mt, lmbda, u_j, u_jp1 = numerical_initialisation()
 
     ABE = matrix_form('BE', lmbda, mx - 1)
 
+    add_vec = np.zeros(mx - 1)
+
     for j in range(0, mt):
+        add_vec[0] = left_boundary()
+        add_vec[-1] = right_boundary()
 
-        u_jp1 = spsolve(ABE, u_j[1:mx])
+        u_jp1 = spsolve(ABE, u_j[1:mx]) + add_vec * lmbda
 
-        u_j[0] = 0
+        u_j[0] = left_boundary()
         u_j[1:mx] = u_jp1
-        u_j[mx] = 0
+        u_j[mx] = right_boundary()
 
     return x, u_j
 
 
 def Crank_Nicholson():
-
     x, mx, mt, lmbda, u_j, u_jp1 = numerical_initialisation()
 
     ACN, BCN = matrix_form('CN', lmbda, mx - 1)
 
+    add_vec = np.zeros(mx - 1)
+
     for j in range(0, mt):
 
-        u_jp1 = spsolve(ACN, BCN * u_j[1:mx])
+        add_vec[0] = left_boundary()
+        add_vec[-1] = right_boundary()
 
-        u_j[0] = 0
+        u_jp1 = spsolve(ACN, BCN * u_j[1:mx]) + add_vec * lmbda
+
+        u_j[0] = left_boundary()
         u_j[1:mx] = u_jp1
-        u_j[mx] = 0
+        u_j[mx] = right_boundary()
 
     return x, u_j
 
@@ -146,6 +158,7 @@ BE_x, BE_u_j = Backwards_Euler()
 CN_x, CN_u_j = Crank_Nicholson()
 
 # pl.plot(FE_x, FE_u_j, 'ro', label='num')
+# pl.plot(BE_x, BE_u_j, 'ro', label='num')
 pl.plot(CN_x, CN_u_j, 'ro', label='num')
 
 xx = np.linspace(0, L, 250)
