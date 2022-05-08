@@ -98,9 +98,11 @@ def numerical_initialisation(boundary):
 
 
 def Forward_Euler(boundary):
-    x, mx, mt, lmbda, u_j, u_jp1 = numerical_initialisation('periodic')
 
     if boundary == 'dirichlet':
+
+        x, mx, mt, lmbda, u_j, u_jp1 = numerical_initialisation('not periodic')
+
         AFE = matrix_form('FE', lmbda, mx - 1)
         add_vec = np.zeros(mx - 1)
 
@@ -115,14 +117,33 @@ def Forward_Euler(boundary):
             u_j[mx] = right_boundary()
 
     elif boundary == 'periodic':
+
+        x, mx, mt, lmbda, u_j, u_jp1 = numerical_initialisation('periodic')
+
         AFE = matrix_form('FE', lmbda, mx)
-        AFE[0, mx - 1] = AFE[mx - 1, 0] = lmbda
+        AFE[0, mx - 1] = lmbda
+        AFE[mx - 1, 0] = lmbda
 
         for j in range(0, mt):
 
             u_jp1 = np.dot(AFE, u_j[:mx])
 
             u_j[:mx] = u_jp1
+
+    elif boundary == 'neumann':
+
+        x, mx, mt, lmbda, u_j, u_jp1 = numerical_initialisation('not periodic')
+
+        AFE = matrix_form('FE', lmbda, mx + 1)
+        AFE[0, 1] = 2 * lmbda
+        AFE[-1, -2] = 2 * lmbda
+        add_vec = np.zeros(mx + 1)
+
+        for j in range(0, mt):
+            add_vec[0] = - left_boundary()
+            add_vec[-1] = right_boundary()
+
+            u_j = np.dot(AFE, u_j) + add_vec * lmbda * (x[1] - x[0])
 
     else:
         raise ValueError(f"boundary value should be 'dirichlet' or 'periodic' but was '{boundary}' instead. Please change this.")
@@ -131,7 +152,7 @@ def Forward_Euler(boundary):
 
 
 def Backwards_Euler():
-    x, mx, mt, lmbda, u_j, u_jp1 = numerical_initialisation()
+    x, mx, mt, lmbda, u_j, u_jp1 = numerical_initialisation('not periodic')
 
     ABE = matrix_form('BE', lmbda, mx - 1)
 
@@ -151,7 +172,7 @@ def Backwards_Euler():
 
 
 def Crank_Nicholson():
-    x, mx, mt, lmbda, u_j, u_jp1 = numerical_initialisation()
+    x, mx, mt, lmbda, u_j, u_jp1 = numerical_initialisation('not periodic')
 
     ACN, BCN = matrix_form('CN', lmbda, mx - 1)
 
@@ -172,7 +193,7 @@ def Crank_Nicholson():
 
 
 # Plot the final result and exact solution
-FE_x, FE_u_j = Forward_Euler('periodic')
+FE_x, FE_u_j = Forward_Euler('neumann')
 # BE_x, BE_u_j = Backwards_Euler()
 # CN_x, CN_u_j = Crank_Nicholson()
 
