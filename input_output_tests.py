@@ -118,6 +118,11 @@ def test_func_output(ODE, x0, t, system, *args):
             Raises an error if there is anything wrong with the output of the function (wrong type/shape)
     """
 
+    pos_args = count_positional_args_required(ODE)
+
+    if pos_args != 2 and pos_args != 3:
+        raise IndexError(f"pc function needs to allow either 2 or 3 positional arguments: x0, t and args (optional). Yet, this pc function allowed {pos_args} positional argument(s).")
+
     test_output = ODE(x0, t, *args)
 
     if not isinstance(test_output, (int, np.ndarray, float)):
