@@ -39,7 +39,7 @@ def left_boundary():
 
 
 def right_boundary():
-    return 1
+    return 0
 
 
 def matrix_form(method, lmbda, mx):
@@ -64,13 +64,16 @@ def matrix_form(method, lmbda, mx):
         return CN_matrix1, CN_matrix2
 
 
-def numerical_initialisation():
+def numerical_initialisation(boundary):
     # Set numerical parameters
     mx = 10  # number of gridpoints in space
     mt = 1000  # number of gridpoints in time
 
     # Set up the numerical environment variables
-    x = np.linspace(0, L, mx + 1)  # mesh points in space
+    if boundary == 'periodic':
+        x = np.linspace(0, L, mx)  # mesh points in space
+    else:
+        x = np.linspace(0, L, mx + 1)
     t = np.linspace(0, T, mt + 1)  # mesh points in time
     deltax = x[1] - x[0]  # gridspacing in x
     deltat = t[1] - t[0]  # gridspacing in t
@@ -84,29 +87,45 @@ def numerical_initialisation():
     u_jp1 = np.zeros(x.size)  # u at next time step
 
     # Set initial condition
-    for i in range(0, mx + 1):
-        u_j[i] = u_I(x[i])
-        # u_j[i] = new_u_I(x[i], 1/2)
+    if boundary == 'periodic':
+        for i in range(0, mx):
+            u_j[i] = u_I(x[i])
+    else:
+        for i in range(0, mx + 1):
+            u_j[i] = u_I(x[i])
 
     return x, mx, mt, lmbda, u_j, u_jp1
 
 
-def Forward_Euler():
-    x, mx, mt, lmbda, u_j, u_jp1 = numerical_initialisation()
+def Forward_Euler(boundary):
+    x, mx, mt, lmbda, u_j, u_jp1 = numerical_initialisation('periodic')
 
-    AFE = matrix_form('FE', lmbda, mx - 1)
+    if boundary == 'dirichlet':
+        AFE = matrix_form('FE', lmbda, mx - 1)
+        add_vec = np.zeros(mx - 1)
 
-    add_vec = np.zeros(mx - 1)
+        for j in range(0, mt):
+            add_vec[0] = left_boundary()
+            add_vec[-1] = right_boundary()
 
-    for j in range(0, mt):
-        add_vec[0] = left_boundary()
-        add_vec[-1] = right_boundary()
+            u_jp1 = np.dot(AFE, u_j[1:mx]) + add_vec * lmbda
 
-        u_jp1 = np.dot(AFE, u_j[1:mx]) + add_vec * lmbda
+            u_j[0] = left_boundary()
+            u_j[1:mx] = u_jp1
+            u_j[mx] = right_boundary()
 
-        u_j[0] = left_boundary()
-        u_j[1:mx] = u_jp1
-        u_j[mx] = right_boundary()
+    elif boundary == 'periodic':
+        AFE = matrix_form('FE', lmbda, mx)
+        AFE[0, mx - 1] = AFE[mx - 1, 0] = lmbda
+
+        for j in range(0, mt):
+
+            u_jp1 = np.dot(AFE, u_j[:mx])
+
+            u_j[:mx] = u_jp1
+
+    else:
+        raise ValueError(f"boundary value should be 'dirichlet' or 'periodic' but was '{boundary}' instead. Please change this.")
 
     return x, u_j
 
@@ -153,13 +172,13 @@ def Crank_Nicholson():
 
 
 # Plot the final result and exact solution
-FE_x, FE_u_j = Forward_Euler()
-BE_x, BE_u_j = Backwards_Euler()
-CN_x, CN_u_j = Crank_Nicholson()
+FE_x, FE_u_j = Forward_Euler('periodic')
+# BE_x, BE_u_j = Backwards_Euler()
+# CN_x, CN_u_j = Crank_Nicholson()
 
-# pl.plot(FE_x, FE_u_j, 'ro', label='num')
+pl.plot(FE_x, FE_u_j, 'ro', label='num')
 # pl.plot(BE_x, BE_u_j, 'ro', label='num')
-pl.plot(CN_x, CN_u_j, 'ro', label='num')
+# pl.plot(CN_x, CN_u_j, 'ro', label='num')
 
 xx = np.linspace(0, L, 250)
 pl.plot(xx, u_exact(xx, T), 'b-', label='exact')
