@@ -4,15 +4,15 @@ import matplotlib.pyplot as plt
 import numpy as np
 from numerical_shooting import shooting, phase_condition
 import warnings
-from ODE_solver import input_test, test_init_conds
+from input_output_tests import input_test, test_init_conds, test_func_output, test_pc_output
 
 
-def nat_param_continuation(ODE, u0, param_range, vary_par, param_number, solver, discretisation, pc, system):
+def continuation(method, ODE, u0, param_range, vary_par, param_number, solver, discretisation, pc, system):
     """
-        Perform natural parameter continuation: increment the parameter by a set value and use the previous solution as
-        the initial guess for the next parameter.
+        Initialises the parameter continuation, and then either runs natural parameter or pseudo-arclength.
 
             Parameters:
+                method (str):           name of the continuation method to use, either 'nat' or 'pseudo'
                 ODE (function):         the ODE whos root we want to find
                 u0 (ndarray):           list of initial x0 and t values
                 param_range (ndarray):  range of parameters to run the code on
@@ -28,7 +28,7 @@ def nat_param_continuation(ODE, u0, param_range, vary_par, param_number, solver,
         """
 
     """
-    Test all the inputs of the shooting_orbit function are the right type
+    Test all the inputs
     """
 
     input_test(ODE, 'ODE', 'function')
@@ -44,11 +44,17 @@ def nat_param_continuation(ODE, u0, param_range, vary_par, param_number, solver,
     input_test(vary_par, 'vary_par', 'int_or_float')
     input_test(param_number, 'param_number', 'int_or_float')
 
+    test_func_output(ODE, u0[:-1], u0[-1], system, param_range[vary_par])
+
     """
-    Start the natural parameter continuation
+    Initialise the parameter list and set up the continuation
     """
 
-    print(f'Running the natural parameter continuation for the {ODE.__name__} function.')
+    if method == 'nat':
+        print(f'Running the natural parameter continuation for the {ODE.__name__} function.')
+    elif method == 'pseudo':
+        print(f'Running the pseudo arc length continuation for the {ODE.__name__} function.')
+
     start_time = time.time()
 
     warnings.filterwarnings('ignore')
@@ -58,6 +64,18 @@ def nat_param_continuation(ODE, u0, param_range, vary_par, param_number, solver,
     last_args = param_range[abs(vary_par - 1)]  # this ensures that if first_args = param_range[0], then last_args = param_range[1], and vice versa
 
     param_list = np.linspace(first_args, last_args, param_number)
+
+    if method == 'nat':
+        sol, param = nat_param_continuation(ODE, u0, param_number, solver, discretisation, pc, first_args, start_time, param_list)
+    elif method == 'pseudo':
+        sol, param = pseudo_arclength_continuation(ODE, u0, param_range, vary_par, param_number, discretisation, solver, pc, system, start_time, param_list)
+    else:
+        raise ValueError(f"Please input either 'nat' or 'pseudo' as the method name, instead of {method}.")
+
+    return sol, param
+
+
+def nat_param_continuation(ODE, u0, param_number, solver, discretisation, pc, first_args, start_time, param_list):
 
     # solve for the first solution using the first parameter
     first_sol = solver(discretisation(ODE), u0, (pc, first_args))
@@ -74,56 +92,9 @@ def nat_param_continuation(ODE, u0, param_range, vary_par, param_number, solver,
     return sol, param_list
 
 
-def pseudo_arclength_continuation(ODE, u0, param_range, vary_par, param_number, discretisation, solver, pc, system):
-    """
-         Perform natural parameter continuation: increment the parameter by a set value and use the previous solution as
-         the initial guess for the next parameter.
-
-             Parameters:
-                 ODE (function):         the ODE whos root we want to find
-                 u0 (ndarray):           list of initial x0 and t values
-                 param_range:            value of the maximum parameter to test for
-                 vary_par (int):         index of the parameter in param_range to start the code on
-                 param_number (int):     number of equally spaced parameters to test for within the param_range
-                 solver:                 solver used
-                 discretisation:         discretisation method used
-                 pc (function):          phase condition function
-                 system (boolean):       True if the ODE is a system of equations, False otherwise
-
-             Returns:
-                 Array of all the parameter values tested for, as well as the solutions to the equations for each parameter value
-         """
-
-    """
-    Test all the inputs of the shooting_orbit function are the right type
-    """
-
-    input_test(ODE, 'ODE', 'function')
-    input_test(discretisation, 'discretisation', 'function')
-    input_test(pc, 'pc', 'function')
-
-    input_test(system, 'system', 'boolean')
-
-    test_init_conds(u0, system)
-
-    input_test(param_range, 'param_range', 'list_or_array')
-
-    input_test(vary_par, 'vary_par', 'int_or_float')
-    input_test(param_number, 'param_number', 'int_or_float')
-
-    """
-    Start the pseudo arclength continuation code
-    """
-
-    print(f'Running the pseudo arc length continuation for the {ODE.__name__} function.')
-
-    start_time = time.time()
-
-    warnings.filterwarnings('ignore')
+def pseudo_arclength_continuation(ODE, u0, param_range, vary_par, param_number, discretisation, solver, pc, system, start_time, param_list):
 
     pars = [param_range[vary_par]]
-
-    param_list = np.linspace(param_range[vary_par], param_range[abs(vary_par - 1)], param_number)
 
     # calculate the first solution, and find the second parameter to solve using
     v0 = solver(discretisation(ODE), u0, (pc, param_list[0]))
@@ -209,8 +180,8 @@ def main():
     pc = phase_condition
 
     # Running both the natural parameter and the pseudo arclength continuation code
-    cubic_sol, cubic_param_list = nat_param_continuation(cubic, u0, c_interval, 0, 100, fsolve, lambda x: x, pc, False)
-    sol, par = pseudo_arclength_continuation(cubic, u0, [-2, 2], 0, 50, lambda x: x, fsolve, pc, False)
+    cubic_sol, cubic_param_list = continuation('nat', cubic, u0, c_interval, 0, 100, fsolve, lambda x: x, pc, False)
+    sol, par = continuation('pseudo', cubic, u0, [-2, 2], 0, 50, fsolve, lambda x: x,  pc, False)
 
     plt.plot(cubic_param_list, cubic_sol, label = 'Natural Parameter')
     plt.plot(par, sol, label = 'Pseudo Arc Length')
@@ -252,8 +223,8 @@ def main():
     u0 = np.array([1.2, 1.2, 6.4])
     pc = phase_condition
 
-    hopf_sol, hopf_param_list = nat_param_continuation(Hopf_bif, u0, beta_interval, 1, 50, fsolve, shooting, pc, True)
-    pseudo_hopf_sol, pseudo_hopf_param = pseudo_arclength_continuation(Hopf_bif, u0, np.array([-1, 2]), 1, 50, shooting, fsolve, pc, True)
+    hopf_sol, hopf_param_list = continuation('nat', Hopf_bif, u0, beta_interval, 1, 50, fsolve, shooting, pc, True)
+    pseudo_hopf_sol, pseudo_hopf_param = continuation('pseudo', Hopf_bif, u0, np.array([-1, 2]), 1, 50, fsolve, shooting, pc, True)
 
     plt.plot(hopf_param_list, hopf_sol[:, 0], label='Natural Parameter')
     plt.plot(pseudo_hopf_param, pseudo_hopf_sol, label='Pseudo Arc Length')
@@ -284,8 +255,8 @@ def main():
     u0 = np.array([1.4, 0, 6.3])
     pc = phase_condition
 
-    mod_hopf_sol, mod_hopf_param_list = nat_param_continuation(mod_Hopf_bif, u0, beta_interval, 1, 50, fsolve, shooting, pc, True)
-    pseudo_mod_hopf_sol, pseudo_mod_hopf_param = pseudo_arclength_continuation(mod_Hopf_bif, u0, [-1, 2], 1, 50, shooting, fsolve, pc, True)
+    mod_hopf_sol, mod_hopf_param_list = continuation('nat', mod_Hopf_bif, u0, beta_interval, 1, 50, fsolve, shooting, pc, True)
+    pseudo_mod_hopf_sol, pseudo_mod_hopf_param = continuation('pseudo', mod_Hopf_bif, u0, [-1, 2], 1, 50, fsolve, shooting, pc, True)
 
     plt.plot(mod_hopf_param_list, mod_hopf_sol[:, 0], label='Natural Parameter')
     plt.plot(pseudo_mod_hopf_param, pseudo_mod_hopf_sol, label='Pseudo Arc Length')
