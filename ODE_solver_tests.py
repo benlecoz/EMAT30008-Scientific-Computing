@@ -139,7 +139,7 @@ def ODE_solver_tests():
 
     # function that outputs the wrong type
     try:
-        solve_ode(lambda x: 'not the right output type', single_x0, t0, t1, method_name, deltat_max, False)
+        solve_ode(lambda x, t: 'not the right output type', single_x0, t0, t1, method_name, deltat_max, False)
         failed_tests.append('function has wrong output type')
     except TypeError:
         passed_tests.append('function has wrong output type')
@@ -158,12 +158,19 @@ def ODE_solver_tests():
     except ValueError:
         passed_tests.append('system x0 but single function output')
 
-    # function that only takes one input when both x0 and t need to be passed
+    # function with not enough positional arguments
     try:
         solve_ode(lambda x: np.array([x]), single_x0, t0, t1, method_name, deltat_max, False)
-        failed_tests.append('single function input doesnt account for x0 and t')
-    except TypeError:
-        passed_tests.append('single function input doesnt account for x0 and t')
+        failed_tests.append('function with not enough positional arguments')
+    except IndexError:
+        passed_tests.append('function with not enough positional arguments')
+
+    # function with too many positional arguments
+    try:
+        solve_ode(lambda x, t, args, pc: np.array([x]), single_x0, t0, t1, method_name, deltat_max, False)
+        failed_tests.append('function with too many enough positional arguments')
+    except IndexError:
+        passed_tests.append('function with too many positional arguments')
 
     number_of_tests = len(failed_tests) + len(passed_tests)
 
