@@ -172,7 +172,21 @@ def test_pc_output(ODE, u0, pc, *args):
 
 
 def ODE_close_to_true(ODE_solver, ODE, ODE_true, u0, method_name, system, *args):
+    """
+    Finds the accuracy of a ODE solver solution compared to the true solution
 
+        Parameters:
+            ODE_solver (function):  this is solve_ode, but to avoid circular imports, the solve_ode function could not be imported into this code
+            ODE (function):         the ODE to test the solutions on
+            ODE_true (function):    the true solution function of the ODE
+            u0:                     initial conditions x0 and t1
+            method_name (str):      name of the method to use, either 'euler' or 'RK4'
+            system (bool):          True if the ODE is a system of equations, False otherwise
+            *args:                  any additional arguments that the ODE function defined above expects
+
+        Returns:
+            The accuracy of the true solution, as a power of 10.
+    """
     empirical_sol = ODE_solver(ODE, u0[:-1], 0, u0[-1], method_name, 0.01, system, *args)
     true_sol = ODE_true(u0[-1], *args)
 
@@ -197,7 +211,21 @@ def ODE_close_to_true(ODE_solver, ODE, ODE_true, u0, method_name, system, *args)
 
 
 def shooting_close_to_true(shooting_code, ODE, true_ODE, u0, pc, system, *args):
+    """
+    Finds the accuracy of a shooting solution compared to the true solution
 
+        Parameters:
+            shooting_code (function):   this is the shooting function, but to avoid circular imports, the function could not be imported into this code
+            ODE (function):             the ODE to test the solutions on
+            true_ODE (function):        the true solution function of the ODE
+            u0:                         initial conditions x0 and t
+            pc (function):              the phase condition
+            system (bool):              True if the ODE is a system of equations, False otherwise
+            *args:                      any additional arguments that the ODE function defined above expects
+
+        Returns:
+            The accuracy of the true solution, as a power of 10.
+    """
     empirical_sol = shooting_code(ODE, u0, pc, system, False, *args)
     true_sol = true_ODE(u0[-1], *args)
 
