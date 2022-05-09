@@ -12,16 +12,16 @@ def continuation(method, ODE, u0, param_range, vary_par, param_number, solver, d
         Initialises the parameter continuation, and then either runs natural parameter or pseudo-arclength.
 
             Parameters:
-                method (str):           name of the continuation method to use, either 'nat' or 'pseudo'
-                ODE (function):         the ODE whos root we want to find
-                u0 (ndarray):           list of initial x0 and t values
-                param_range (ndarray):  range of parameters to run the code on
-                vary_par (int):         index of the parameter in param_range to start the code on
-                param_number (int):     number of equally spaced parameters to test for within the param_range
-                solver:                 solver used
-                discretisation:         discretisation method used
-                pc (function):          phase condition function
-                system (boolean):       True if the ODE is a system of equations, False otherwise
+                method (str):               name of the continuation method to use, either 'nat' or 'pseudo'
+                ODE (function):             the ODE whos root we want to find
+                u0 (ndarray):               list of initial x0 and t values
+                param_range (ndarray):      range of parameters to run the code on
+                vary_par (int):             index of the parameter in param_range to start the code on
+                param_number (int):         number of equally spaced parameters to test for within the param_range
+                solver:                     solver used
+                discretisation (function):  discretisation method used
+                pc (function):              phase condition function
+                system (boolean):           True if the ODE is a system of equations, False otherwise
 
             Returns:
                 Array of all the parameter values tested for, as well as the solutions to the equations for each parameter value
@@ -44,6 +44,10 @@ def continuation(method, ODE, u0, param_range, vary_par, param_number, solver, d
     input_test(param_range, 'param_range', 'list_or_array')
 
     input_test(vary_par, 'vary_par', 'int_or_float')
+
+    if vary_par != 0 and vary_par != 0:
+        raise ValueError(f"vary_par needs to be an index of either 0 or 1, but {vary_par} was passed instead.")
+
     input_test(param_number, 'param_number', 'int_or_float')
 
     test_func_output(ODE, u0[:-1], u0[-1], system, param_range[vary_par])
