@@ -1,11 +1,12 @@
 from ODE_solver import solve_ode
 import numpy as np
+from input_output_tests import ODE_close_to_true
 
 # One of the error trap tests will raise a Visible Deprecation Warning, so this will suppress it
 np.warnings.filterwarnings('ignore', category=np.VisibleDeprecationWarning)
 
 
-def ODE_solver_tests():
+def ODE_solver_input_output_tests():
     """
     Run tests on the inputs and outputs of the ODE solver
     """
@@ -180,9 +181,88 @@ def ODE_solver_tests():
             print(failed_tests)
 
     else:
-        print(f'Congratulations, you have passed all the {number_of_tests} tests for the ODE solver!')
+        print(f'Congratulations, you have passed all the {number_of_tests} input/output tests for the ODE solver!')
+
+
+def ODE_solver_value_tests():
+    """
+    Run tests on the values of the output of the ODE solver compared to the true solutions
+    """
+
+    failed_tests = []
+    passed_tests = []
+
+    def FO_f(x, t):
+        """
+        Function for first order ODE dxdt = x
+            Parameters:
+                x (int):    x value
+                t (int):    t value
+
+            Returns:
+                Array of dxdt at (x,t)
+        """
+
+        dxdt = np.array([x])
+
+        return dxdt
+
+    def FO_true_solution(t):
+        """
+        True solution to the first order ODE dxdt = x defined above
+            Parameters:
+                t (ndarray):    t value
+
+            Returns:
+                Result of x = e^(t)
+        """
+        x = np.exp(t)
+
+        return x
+
+    def not_FO_true_solution(t):
+        """
+        Not the True solution to the first order ODE dxdt = x defined above
+
+        """
+        x = np.exp(t) * np.exp(t)
+
+        return x
+
+    try:
+        ODE_close_to_true(solve_ode, FO_f, not_FO_true_solution, [1, 1], 'euler', False)
+        failed_tests.append('euler value testing for wrong function')
+    except ValueError:
+        passed_tests.append('euler value testing for wrong function')
+
+    try:
+        ODE_close_to_true(solve_ode, FO_f, not_FO_true_solution, [1, 1], 'euler', False)
+        failed_tests.append('RK4 value testing for wrong function')
+    except ValueError:
+        passed_tests.append('RK4 value testing for wrong function')
+
+    try:
+        ODE_close_to_true(solve_ode, FO_f, FO_true_solution, [1, 1], 'euler', False)
+        passed_tests.append('euler value testing for right function')
+    except ValueError:
+        failed_tests.append('euler value testing for right function')
+
+    try:
+        ODE_close_to_true(solve_ode, FO_f, FO_true_solution, [1, 1], 'RK4', False)
+        passed_tests.append('RK4 value testing for right function')
+    except ValueError:
+        failed_tests.append('RK4 value testing for right function')
+
+    number_tests = len(passed_tests) + len(failed_tests)
+
+    if len(passed_tests) == number_tests:
+        print(f'The ODE solver has passed all the {number_tests} Value tests!')
+    else:
+        print('The ODE solver has failed some of the value tests:')
+        print(failed_tests)
 
 
 if __name__ == "__main__":
-    ODE_solver_tests()
+    ODE_solver_input_output_tests()
+    ODE_solver_value_tests()
 
