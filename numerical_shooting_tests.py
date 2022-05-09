@@ -150,8 +150,6 @@ def numerical_shooting_tests():
 
     number_of_tests = len(failed_tests) + len(passed_tests)
 
-    print(passed_tests)
-
     if len(passed_tests) != number_of_tests:
         print(f"Not all the tests were passed. {number_of_tests - len(passed_tests)} test(s) was/were failed. \n")
         print('This is the name of the failed test(s).\n')
