@@ -37,6 +37,8 @@ def continuation(method, ODE, u0, param_range, vary_par, param_number, solver, d
 
     input_test(system, 'system', 'boolean')
 
+    input_test(method, 'method', 'string')
+
     test_init_conds(u0, system)
 
     input_test(param_range, 'param_range', 'list_or_array')
@@ -59,14 +61,11 @@ def continuation(method, ODE, u0, param_range, vary_par, param_number, solver, d
 
     warnings.filterwarnings('ignore')
 
-    first_args = param_range[vary_par]
-
-    last_args = param_range[abs(vary_par - 1)]  # this ensures that if first_args = param_range[0], then last_args = param_range[1], and vice versa
-
-    param_list = np.linspace(first_args, last_args, param_number)
+    param_list = np.linspace(param_range[vary_par], param_range[abs(vary_par - 1)], param_number)
+    # the absolute value ensures that if the first args is param_range[0], then last args is param_range[1], and vice versa
 
     if method == 'nat':
-        sol, param = nat_param_continuation(ODE, u0, param_number, solver, discretisation, pc, first_args, start_time, param_list)
+        sol, param = nat_param_continuation(ODE, u0, param_number, solver, discretisation, pc, start_time, param_list)
     elif method == 'pseudo':
         sol, param = pseudo_arclength_continuation(ODE, u0, param_range, vary_par, param_number, discretisation, solver, pc, system, start_time, param_list)
     else:
@@ -75,10 +74,10 @@ def continuation(method, ODE, u0, param_range, vary_par, param_number, solver, d
     return sol, param
 
 
-def nat_param_continuation(ODE, u0, param_number, solver, discretisation, pc, first_args, start_time, param_list):
+def nat_param_continuation(ODE, u0, param_number, solver, discretisation, pc, start_time, param_list):
 
     # solve for the first solution using the first parameter
-    first_sol = solver(discretisation(ODE), u0, (pc, first_args))
+    first_sol = solver(discretisation(ODE), u0, (pc, param_list[0]))
 
     sol = np.zeros((param_number, len(u0)))
     sol[0] = first_sol
