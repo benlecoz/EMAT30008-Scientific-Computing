@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import math
 import numpy as np
-from input_output_tests import input_test, test_init_conds, test_func_output
+from input_output_tests import input_test, test_init_conds, test_func_output, ODE_close_to_true
 
 
 def euler_step(ODE, x0, t0, h, *args):
@@ -205,11 +205,18 @@ def main():
         return x
 
     # Solve the ODE using the Euler equation and plot the result
-    FO_euler, FO_time = solve_ode(FO_f, 1, 0, 1, 'euler', 0.01, False)
+    method = 'euler'
+    FO_euler, FO_time = solve_ode(FO_f, 1, 0, 1, method, 0.01, False)
+    accuracy = ODE_close_to_true(solve_ode, FO_f, FO_true_solution, [1, 1], method, False)
+    print(f"The accuracy of the {method} method to calculate the solution of {FO_f.__name__} is in the order {accuracy}.")
     plt.plot(FO_time, FO_euler, label='Euler')
 
     # Solve the ODE using the RK4 equation and plot the result
-    FO_RK4, FO_time = solve_ode(FO_f, 1, 0, 1, 'RK4', 0.01, False)
+    method = 'RK4'
+    FO_RK4, FO_time = solve_ode(FO_f, 1, 0, 1, method, 0.01, False)
+    accuracy = ODE_close_to_true(solve_ode, FO_f, FO_true_solution, [1, 1], method, False)
+    print(f"The accuracy of the {method} method to calculate the solution of {FO_f.__name__} is in the order {accuracy}.")
+
     plt.plot(FO_time, FO_RK4, label='RK4')
 
     # Plot the true solution to the ODE
@@ -260,10 +267,17 @@ def main():
         return u
 
     # Solve the second order ODE using the Euler equation
-    SO_euler, SO_time = solve_ode(SO_f, [1, 1], 0, 10, 'euler', 0.01, True)
+    method = 'euler'
+    SO_euler, SO_time = solve_ode(SO_f, [1, 1], 0, 10, method, 0.01, True)
+    accuracy = ODE_close_to_true(solve_ode, SO_f, SO_true_solution, [1, 1, 10], method, True)
+    print(f"The accuracy of the {method} method to calculate the solution of {SO_f.__name__} is in the order {accuracy}.")
 
     # Solve the second order ODE using the RK4 equation
-    SO_RK4, SO_time = solve_ode(SO_f, [1, 1], 0, 10, 'RK4', 0.01, True)
+    method = 'RK4'
+    SO_RK4, SO_time = solve_ode(SO_f, [1, 1], 0, 10, method, 0.01, True)
+    accuracy = ODE_close_to_true(solve_ode, SO_f, SO_true_solution, [1, 1, 10], method, True)
+    print(f"The accuracy of the {method} method to calculate the solution of {SO_f.__name__} is in the order {accuracy}.")
+
 
     # Plot the Euler, RK4 and True solutions to the first initial condition
     plt.subplot(2, 1, 1)
