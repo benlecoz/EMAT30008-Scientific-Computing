@@ -1,10 +1,3 @@
-# simple forward Euler solver for the 1D heat equation
-#   u_t = kappa u_xx  0<x<L, 0<t<T
-# with zero-temperature boundary conditions
-#   u=0 at x=0,L, t>0
-# and prescribed initial temperature
-#   u=u_I(x) 0<=x<=L,t=0
-
 import numpy as np
 import pylab as pl
 from math import pi
@@ -64,9 +57,9 @@ def matrix_form(method, lmbda, mx):
         return CN_matrix1, CN_matrix2
 
 
-def numerical_initialisation(boundary):
+def numerical_initialisation(boundary, initial_cond, p):
     # Set numerical parameters
-    mx = 10  # number of gridpoints in space
+    mx = 20  # number of gridpoints in space
     mt = 1000  # number of gridpoints in time
 
     # Set up the numerical environment variables
@@ -89,19 +82,25 @@ def numerical_initialisation(boundary):
     # Set initial condition
     if boundary == 'periodic':
         for i in range(0, mx):
-            u_j[i] = u_I(x[i])
+            if initial_cond == new_u_I:
+                u_j[i] = initial_cond(x[i], p)
+            else:
+                u_j[i] = initial_cond(x[i])
     else:
         for i in range(0, mx + 1):
-            u_j[i] = u_I(x[i])
+            if initial_cond == new_u_I:
+                u_j[i] = initial_cond(x[i], p)
+            else:
+                u_j[i] = initial_cond(x[i])
 
     return x, mx, mt, lmbda, u_j, u_jp1
 
 
-def Forward_Euler(boundary):
+def Forward_Euler(boundary, initial_cond, p):
 
     if boundary == 'dirichlet':
 
-        x, mx, mt, lmbda, u_j, u_jp1 = numerical_initialisation('not periodic')
+        x, mx, mt, lmbda, u_j, u_jp1 = numerical_initialisation('not periodic', initial_cond, p)
 
         AFE = matrix_form('FE', lmbda, mx - 1)
         add_vec = np.zeros(mx - 1)
@@ -118,7 +117,7 @@ def Forward_Euler(boundary):
 
     elif boundary == 'periodic':
 
-        x, mx, mt, lmbda, u_j, u_jp1 = numerical_initialisation('periodic')
+        x, mx, mt, lmbda, u_j, u_jp1 = numerical_initialisation('periodic', initial_cond, p)
 
         AFE = matrix_form('FE', lmbda, mx)
         AFE[0, mx - 1] = lmbda
@@ -132,7 +131,7 @@ def Forward_Euler(boundary):
 
     elif boundary == 'neumann':
 
-        x, mx, mt, lmbda, u_j, u_jp1 = numerical_initialisation('not periodic')
+        x, mx, mt, lmbda, u_j, u_jp1 = numerical_initialisation('not periodic', initial_cond, p)
 
         AFE = matrix_form('FE', lmbda, mx + 1)
         AFE[0, 1] = 2 * lmbda
@@ -151,8 +150,8 @@ def Forward_Euler(boundary):
     return x, u_j
 
 
-def Backwards_Euler():
-    x, mx, mt, lmbda, u_j, u_jp1 = numerical_initialisation('not periodic')
+def Backwards_Euler(initial_cond, p):
+    x, mx, mt, lmbda, u_j, u_jp1 = numerical_initialisation('not periodic', initial_cond, p)
 
     ABE = matrix_form('BE', lmbda, mx - 1)
 
@@ -171,8 +170,8 @@ def Backwards_Euler():
     return x, u_j
 
 
-def Crank_Nicholson():
-    x, mx, mt, lmbda, u_j, u_jp1 = numerical_initialisation('not periodic')
+def Crank_Nicholson(initial_cond, p):
+    x, mx, mt, lmbda, u_j, u_jp1 = numerical_initialisation('not periodic', initial_cond, p)
 
     ACN, BCN = matrix_form('CN', lmbda, mx - 1)
 
@@ -192,18 +191,64 @@ def Crank_Nicholson():
     return x, u_j
 
 
-# Plot the final result and exact solution
-FE_x, FE_u_j = Forward_Euler('neumann')
-# BE_x, BE_u_j = Backwards_Euler()
-# CN_x, CN_u_j = Crank_Nicholson()
+def plot():
+    xx = np.linspace(0, L, 250)
+    pl.plot(xx, u_exact(xx, T), 'b-', label='exact')
+    pl.xlabel('x')
+    pl.ylabel('u(x,0.5)')
+    pl.legend(loc='upper right')
 
-pl.plot(FE_x, FE_u_j, 'ro', label='num')
-# pl.plot(BE_x, BE_u_j, 'ro', label='num')
-# pl.plot(CN_x, CN_u_j, 'ro', label='num')
 
-xx = np.linspace(0, L, 250)
-pl.plot(xx, u_exact(xx, T), 'b-', label='exact')
-pl.xlabel('x')
-pl.ylabel('u(x,0.5)')
-pl.legend(loc='upper right')
-pl.show()
+def main():
+    """
+    We run the code using our new initial condition function, and see what happens when we vary the p parameter
+    """
+    for i in range(10):
+        FE_x, FE_u_j = Forward_Euler('dirichlet', new_u_I, i)
+        pl.plot(FE_x, FE_u_j, label=f'p = {i}')
+
+    plot()
+    pl.show()
+
+    """
+    As shown by the above plot, when the p value is raised, the curve becomes less and less similar to the true solution
+    """
+
+    """
+    Next, we plot the three different methods: Forward Euler, Backwards Euler and Crank Nicholson to compare the three
+    """
+
+    FE_x, FE_u_j = Forward_Euler('dirichlet', u_I, None)
+    BE_x, BE_u_j = Backwards_Euler(u_I, None)
+    CN_x, CN_u_j = Crank_Nicholson(u_I, None)
+
+    pl.plot(FE_x, FE_u_j, 'o', label='Forward Euler')
+    pl.plot(BE_x, BE_u_j, 'o', label='Backwards Euler')
+    pl.plot(CN_x, CN_u_j, 'o', label='Crank Nicholson')
+
+    plot()
+    pl.show()
+
+    """
+    Finally, the code allows three different boundary conditions to be run: 'dirichlet', 'periodic' and 'neumann'
+    It seems that the results found in the plots below are inaccurate, but it is unclear why this is, as the boundary 
+    conditions are thought to have been well implemented. 
+    """
+
+    FE_x, FE_u_j = Forward_Euler('neumann', u_I, None)
+
+    pl.plot(FE_x, FE_u_j, 'ro', label='num')
+
+    plot()
+    pl.show()
+
+    FE_x, FE_u_j = Forward_Euler('periodic', u_I, None)
+
+    pl.plot(FE_x, FE_u_j, 'ro', label='num')
+
+    plot()
+    pl.show()
+
+
+if __name__ == "__main__":
+    main()
